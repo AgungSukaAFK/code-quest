@@ -1,20 +1,20 @@
 import { create } from "zustand";
 
-interface UserState {
-  userId: string | null;
+interface UserProfile {
+  id: string;
   username: string | null;
-  displayName: string | null;
-  avatarSeed: string | null;
-  setUser: (user: Partial<Omit<UserState, "setUser" | "clearUser">>) => void;
-  clearUser: () => void;
+  display_name: string | null;
+  avatar_seed: string | null;
 }
 
-export const useUserStore = create<UserState>((set) => ({
-  userId: null,
-  username: null,
-  displayName: null,
-  avatarSeed: null,
-  setUser: (user) => set((state) => ({ ...state, ...user })),
-  clearUser: () =>
-    set({ userId: null, username: null, displayName: null, avatarSeed: null }),
+interface UserStore {
+  profile: UserProfile | null;
+  setProfile: (profile: UserProfile | null) => void;
+  clearProfile: () => void;
+}
+
+export const useUserStore = create<UserStore>((set) => ({
+  profile: null,
+  setProfile: (profile) => set({ profile }),
+  clearProfile: () => set({ profile: null }),
 }));
