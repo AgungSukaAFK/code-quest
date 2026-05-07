@@ -10,6 +10,7 @@ import type {
   TruthTableAnswer,
   TruthTablePuzzle,
 } from "@/types/puzzle";
+import type { RLState } from "@/lib/rl/types";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,13 @@ export function PlayClient({ module, sessionId }: PlayClientProps) {
   const [result, setResult] = useState<PuzzleResult | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [puzzleRenderKey, setPuzzleRenderKey] = useState(0);
+  const [rlContext, setRlContext] = useState<{
+    action: number;
+    was_exploration: boolean;
+    epsilon_at_decision: number;
+    state: RLState;
+    state_key: string;
+  } | null>(null);
   const puzzleStartTime = useRef<number>(Date.now());
 
   const progressLabel = useMemo(
@@ -69,6 +77,17 @@ export function PlayClient({ module, sessionId }: PlayClientProps) {
 
       const data = await response.json();
       setCurrentPuzzle(data.puzzle);
+      setRlContext(
+        data.rl_decision && data.state && data.state_key
+          ? {
+              action: data.rl_decision.action,
+              was_exploration: data.rl_decision.was_exploration,
+              epsilon_at_decision: data.rl_decision.epsilon_at_decision,
+              state: data.state,
+              state_key: data.state_key,
+            }
+          : null,
+      );
       puzzleStartTime.current = Date.now();
       setPuzzleRenderKey((key) => key + 1);
     } catch (error) {
@@ -100,6 +119,8 @@ export function PlayClient({ module, sessionId }: PlayClientProps) {
           user_answer: answer,
           time_taken_sec: timeTaken,
           hints_used: overrideHintsUsed ?? 0,
+          gave_up: false,
+          rl_context: rlContext,
         }),
       });
 
@@ -183,7 +204,11 @@ export function PlayClient({ module, sessionId }: PlayClientProps) {
           key={puzzleRenderKey}
           puzzle={currentPuzzle}
           onSubmit={(answer) =>
-            handleSubmit({ mapping: answer.mapping }, undefined, answer.hints_used)
+            handleSubmit(
+              { mapping: answer.mapping },
+              undefined,
+              answer.hints_used,
+            )
           }
           isSubmitting={submitting}
         />
