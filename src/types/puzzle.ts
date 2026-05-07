@@ -31,7 +31,24 @@ export interface DecompositionOrderContent {
   parallel_groups?: string[][];
 }
 
-export type PuzzleContent = DecompositionSortContent | DecompositionOrderContent;
+export interface TruthTableRow {
+  inputs: Record<string, boolean>;
+  expected_output: boolean;
+}
+
+export interface TruthTableContent {
+  type?: "truth_table";
+  expression: string;
+  display_expression: string;
+  variables: string[];
+  rows: TruthTableRow[];
+  explanation?: string;
+}
+
+export type PuzzleContent =
+  | DecompositionSortContent
+  | DecompositionOrderContent
+  | TruthTableContent;
 
 export interface PuzzleBase {
   id: string;
@@ -52,6 +69,15 @@ export interface DecompositionSortAnswer {
   mapping: Record<string, string>;
 }
 
+export interface TruthTableAnswer {
+  outputs: boolean[];
+}
+
+export interface TruthTablePuzzle extends PuzzleBase {
+  type: "truth_table";
+  content: TruthTableContent;
+}
+
 export interface PuzzleResult {
   solved: boolean;
   correct_count: number;
@@ -59,4 +85,5 @@ export interface PuzzleResult {
   partial_score: number;
   feedback: string;
   incorrect_tasks?: string[];
+  incorrect_rows?: string[];
 }

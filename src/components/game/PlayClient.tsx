@@ -4,11 +4,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import type { PuzzleBase, PuzzleResult } from "@/types/puzzle";
+import type {
+  PuzzleBase,
+  PuzzleResult,
+  TruthTableAnswer,
+  TruthTablePuzzle,
+} from "@/types/puzzle";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { DecompositionSortPuzzle } from "@/components/puzzle/decomposition/DecompositionSortPuzzle";
+import { BooleanPuzzle } from "@/components/puzzle/boolean/BooleanPuzzle";
 import { PuzzleResultModal } from "@/components/puzzle/PuzzleResultModal";
 
 interface PlayClientProps {
@@ -72,14 +78,17 @@ export function PlayClient({ module, sessionId }: PlayClientProps) {
     }
   };
 
-  const handleSubmit = async (answer: {
-    mapping: Record<string, string>;
-    hints_used: number;
-  }) => {
+  const handleSubmit = async (
+    answer: { mapping: Record<string, string> } | TruthTableAnswer,
+    overrideTimeSpent?: number,
+    overrideHintsUsed?: number,
+  ) => {
     if (!currentPuzzle) return;
 
     setSubmitting(true);
-    const timeTaken = Math.round((Date.now() - puzzleStartTime.current) / 1000);
+    const timeTaken =
+      overrideTimeSpent ??
+      Math.round((Date.now() - puzzleStartTime.current) / 1000);
 
     try {
       const response = await fetch("/api/puzzle/submit", {
@@ -88,9 +97,9 @@ export function PlayClient({ module, sessionId }: PlayClientProps) {
         body: JSON.stringify({
           session_id: sessionId,
           puzzle_id: currentPuzzle.id,
-          user_answer: { type: currentPuzzle.type, mapping: answer.mapping },
+          user_answer: answer,
           time_taken_sec: timeTaken,
-          hints_used: answer.hints_used,
+          hints_used: overrideHintsUsed ?? 0,
         }),
       });
 
@@ -142,7 +151,10 @@ export function PlayClient({ module, sessionId }: PlayClientProps) {
           </p>
           <Link
             href="/world-map"
-            className={cn(buttonVariants({ variant: "default" }), "justify-center")}
+            className={cn(
+              buttonVariants({ variant: "default" }),
+              "justify-center",
+            )}
           >
             Kembali ke Peta
           </Link>
@@ -166,12 +178,26 @@ export function PlayClient({ module, sessionId }: PlayClientProps) {
         </span>
       </div>
 
-      <DecompositionSortPuzzle
-        key={puzzleRenderKey}
-        puzzle={currentPuzzle}
-        onSubmit={handleSubmit}
-        isSubmitting={submitting}
-      />
+      {currentPuzzle.type === "decomposition_sort" && (
+        <DecompositionSortPuzzle
+          key={puzzleRenderKey}
+          puzzle={currentPuzzle}
+          onSubmit={(answer) =>
+            handleSubmit({ mapping: answer.mapping }, undefined, answer.hints_used)
+          }
+          isSubmitting={submitting}
+        />
+      )}
+
+      {currentPuzzle.type === "truth_table" && (
+        <BooleanPuzzle
+          key={puzzleRenderKey}
+          puzzle={currentPuzzle as TruthTablePuzzle}
+          onSubmit={(answer, timeSpent, hintsUsed) =>
+            handleSubmit(answer, timeSpent, hintsUsed)
+          }
+        />
+      )}
 
       <PuzzleResultModal
         open={showResult}

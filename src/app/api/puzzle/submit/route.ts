@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import type { PuzzleResult } from "@/types/puzzle";
+import type { PuzzleResult, TruthTableAnswer, TruthTableContent } from "@/types/puzzle";
 
 type PuzzleRow = {
   id: string;
   type: string;
-  content: {
-    correct_mapping?: Record<string, string>;
-  };
+  content: Record<string, unknown>;
 };
 
 export async function POST(request: NextRequest) {
@@ -88,7 +86,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ result, attempt_id: attempt.id });
   } catch (error) {
     console.error("Submit error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -97,6 +98,13 @@ function validateAnswer(puzzle: PuzzleRow, userAnswer: unknown): PuzzleResult {
     return validateDecompositionSort(
       puzzle.content,
       userAnswer as { mapping?: Record<string, string> },
+    );
+  }
+
+  if (puzzle.type === "truth_table") {
+    return evaluateTruthTable(
+      puzzle.content as unknown as TruthTableContent,
+      userAnswer as TruthTableAnswer,
     );
   }
 
@@ -110,10 +118,11 @@ function validateAnswer(puzzle: PuzzleRow, userAnswer: unknown): PuzzleResult {
 }
 
 function validateDecompositionSort(
-  content: { correct_mapping?: Record<string, string> },
+  content: Record<string, unknown>,
   userAnswer: { mapping?: Record<string, string> },
 ): PuzzleResult {
-  const correctMapping = content.correct_mapping ?? {};
+  const correctMapping =
+    (content.correct_mapping as Record<string, string> | undefined) ?? {};
   const userMapping = userAnswer.mapping ?? {};
 
   let correctCount = 0;
@@ -149,5 +158,45 @@ function validateDecompositionSort(
     partial_score: partialScore,
     feedback,
     incorrect_tasks: incorrectTasks,
+  };
+}
+
+function evaluateTruthTable(
+  content: TruthTableContent,
+  answer: TruthTableAnswer,
+): PuzzleResult {
+  const total = content.rows.length;
+  let correctCount = 0;
+  const incorrectRows: string[] = [];
+
+  content.rows.forEach((row, index) => {
+    if (answer.outputs[index] === row.expected_output) {
+      correctCount += 1;
+    } else {
+      incorrectRows.push(`row_${index}`);
+    }
+  });
+
+  const partialScore = total > 0 ? correctCount / total : 0;
+  const solved = correctCount === total;
+
+  let feedback = "";
+  if (solved) {
+    feedback = `Sempurna! Semua ${total} baris benar!`;
+  } else if (partialScore >= 0.75) {
+    feedback = `Hampir! ${correctCount} dari ${total} baris benar. Cek lagi yang salah.`;
+  } else if (partialScore >= 0.5) {
+    feedback = `Lumayan, ${correctCount}/${total} benar. Pikirkan urutan operasi.`;
+  } else {
+    feedback = `Coba lagi! ${correctCount}/${total} benar. Review konsep AND/OR/NOT.`;
+  }
+
+  return {
+    solved,
+    correct_count: correctCount,
+    total_count: total,
+    partial_score: partialScore,
+    feedback,
+    incorrect_rows: incorrectRows,
   };
 }

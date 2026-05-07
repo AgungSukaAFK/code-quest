@@ -21,17 +21,19 @@ export async function POST(request: NextRequest) {
     };
 
     if (!module_id) {
-      return NextResponse.json({ error: "module_id required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "module_id required" },
+        { status: 400 },
+      );
     }
 
     let query = supabase
       .from("puzzles")
       .select("*")
-      .eq("module_id", module_id)
-      .eq("type", "decomposition_sort");
+      .eq("module_id", module_id);
 
     if (exclude_ids.length > 0) {
-      const quotedIds = exclude_ids.map((id) => `"${id.replaceAll('"', '')}"`);
+      const quotedIds = exclude_ids.map((id) => `"${id.replaceAll('"', "")}"`);
       query = query.not("id", "in", `(${quotedIds.join(",")})`);
     }
 
@@ -57,6 +59,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ puzzle: selected });
   } catch (error) {
     console.error("GET puzzle error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
