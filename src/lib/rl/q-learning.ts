@@ -80,8 +80,7 @@ export class QLearningAgent {
     const nextQValues = this.qValues[nextStateKey];
     const maxNextQ = Math.max(nextQValues[1], nextQValues[2], nextQValues[3]);
 
-    const tdError =
-      reward + this.metadata.discount_factor * maxNextQ - qBefore;
+    const tdError = reward + this.metadata.discount_factor * maxNextQ - qBefore;
     const qAfter = qBefore + this.metadata.learning_rate * tdError;
 
     this.qValues[stateKey][action] = qAfter;

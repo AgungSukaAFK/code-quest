@@ -13,14 +13,21 @@ import {
 } from "@dnd-kit/core";
 import { motion } from "framer-motion";
 import { Lightbulb, Send } from "lucide-react";
-import type { DecompositionSortContent, PuzzleBase, Task } from "@/types/puzzle";
+import type {
+  DecompositionSortContent,
+  PuzzleBase,
+  Task,
+} from "@/types/puzzle";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DroppableCategory } from "./DroppableCategory";
 
 interface DecompositionSortPuzzleProps {
   puzzle: PuzzleBase;
-  onSubmit: (answer: { mapping: Record<string, string>; hints_used: number }) => void;
+  onSubmit: (answer: {
+    mapping: Record<string, string>;
+    hints_used: number;
+  }) => void;
   isSubmitting?: boolean;
 }
 
@@ -33,13 +40,15 @@ export function DecompositionSortPuzzle({
 }: DecompositionSortPuzzleProps) {
   const content = puzzle.content as DecompositionSortContent;
 
-  const [taskLocations, setTaskLocations] = useState<Record<string, string>>(() => {
-    const initial: Record<string, string> = {};
-    content.tasks.forEach((task) => {
-      initial[task.id] = POOL_ID;
-    });
-    return initial;
-  });
+  const [taskLocations, setTaskLocations] = useState<Record<string, string>>(
+    () => {
+      const initial: Record<string, string> = {};
+      content.tasks.forEach((task) => {
+        initial[task.id] = POOL_ID;
+      });
+      return initial;
+    },
+  );
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [hintCount, setHintCount] = useState(0);
 
@@ -67,9 +76,12 @@ export function DecompositionSortPuzzle({
     const overId = over.id as string;
 
     const droppedOnCategory =
-      overId === POOL_ID || content.categories.some((category) => category.id === overId);
+      overId === POOL_ID ||
+      content.categories.some((category) => category.id === overId);
 
-    const destination = droppedOnCategory ? overId : taskLocations[overId] ?? POOL_ID;
+    const destination = droppedOnCategory
+      ? overId
+      : (taskLocations[overId] ?? POOL_ID);
 
     setTaskLocations((prev) => ({
       ...prev,
@@ -80,7 +92,9 @@ export function DecompositionSortPuzzle({
   const getTasksAt = (locationId: string): Task[] =>
     content.tasks.filter((task) => taskLocations[task.id] === locationId);
 
-  const allTasksPlaced = Object.values(taskLocations).every((location) => location !== POOL_ID);
+  const allTasksPlaced = Object.values(taskLocations).every(
+    (location) => location !== POOL_ID,
+  );
 
   const handleSubmit = () => {
     const mapping: Record<string, string> = {};

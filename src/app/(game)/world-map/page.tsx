@@ -1,22 +1,22 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import { Header } from '@/components/layout/Header'
-import { WorldMapClient } from '@/components/game/WorldMapClient'
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { Header } from "@/components/layout/Header";
+import { WorldMapClient } from "@/components/game/WorldMapClient";
 
 export default async function WorldMapPage() {
-  const supabase = await createClient()
+  const supabase = await createClient();
 
   const {
     data: { user },
-  } = await supabase.auth.getUser()
+  } = await supabase.auth.getUser();
 
-  if (!user) redirect('/login')
+  if (!user) redirect("/login");
 
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -28,7 +28,10 @@ export default async function WorldMapPage() {
           avatar_seed: profile?.avatar_seed,
         }}
       />
-      <WorldMapClient username={profile?.username} avatarSeed={profile?.avatar_seed} />
+      <WorldMapClient
+        username={profile?.username}
+        avatarSeed={profile?.avatar_seed}
+      />
     </div>
-  )
+  );
 }

@@ -1,9 +1,10 @@
-'use client'
+"use client";
 
-import { MAP_NODES, MAP_PATHS } from '@/lib/game/world-map-config'
+import { MAP_NODES, MAP_PATHS } from "@/lib/game/world-map-config";
 
 export function MapPaths() {
-  const getPosition = (id: string) => MAP_NODES.find((node) => node.id === id)?.position
+  const getPosition = (id: string) =>
+    MAP_NODES.find((node) => node.id === id)?.position;
 
   return (
     <svg
@@ -13,10 +14,10 @@ export function MapPaths() {
       viewBox="0 0 100 100"
     >
       {MAP_PATHS.map((path) => {
-        const from = getPosition(path.from)
-        const to = getPosition(path.to)
+        const from = getPosition(path.from);
+        const to = getPosition(path.to);
 
-        if (!from || !to) return null
+        if (!from || !to) return null;
 
         return (
           <line
@@ -30,8 +31,8 @@ export function MapPaths() {
             strokeDasharray="1 1"
             className="text-primary/40"
           />
-        )
+        );
       })}
     </svg>
-  )
+  );
 }

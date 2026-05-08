@@ -184,7 +184,8 @@ async function runRlUpdate(params: {
     { onConflict: "user_id,module_id" },
   );
 
-  const stateBefore = rlContext?.state ?? (await buildStudentState(userId, puzzle.module_id));
+  const stateBefore =
+    rlContext?.state ?? (await buildStudentState(userId, puzzle.module_id));
   const stateKeyBefore = rlContext?.state_key ?? stateToKey(stateBefore);
   const stateAfter = await buildStudentState(userId, puzzle.module_id);
   const stateKeyAfter = stateToKey(stateAfter);

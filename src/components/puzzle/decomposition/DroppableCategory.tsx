@@ -28,7 +28,8 @@ export function DroppableCategory({
     disabled: isDisabled,
   });
 
-  const colorClass = colorClasses[category.color || "blue"] || colorClasses.blue;
+  const colorClass =
+    colorClasses[category.color || "blue"] || colorClasses.blue;
 
   return (
     <div

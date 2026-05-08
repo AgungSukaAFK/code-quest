@@ -10,7 +10,11 @@ import type { TruthTableAnswer, TruthTablePuzzle } from "@/types/puzzle";
 
 interface Props {
   puzzle: TruthTablePuzzle;
-  onSubmit: (answer: TruthTableAnswer, timeSpent: number, hintsUsed: number) => void;
+  onSubmit: (
+    answer: TruthTableAnswer,
+    timeSpent: number,
+    hintsUsed: number,
+  ) => void;
 }
 
 export function BooleanPuzzle({ puzzle, onSubmit }: Props) {
@@ -141,20 +145,36 @@ export function BooleanPuzzle({ puzzle, onSubmit }: Props) {
       <div className="flex items-start gap-2 text-xs text-muted-foreground">
         <Info className="mt-0.5 h-4 w-4 shrink-0" />
         <p>
-          Klik sel output untuk toggle: <code>?</code> -&gt; <code>T</code> -&gt; <code>F</code> -&gt; <code>?</code>
+          Klik sel output untuk toggle: <code>?</code> -&gt; <code>T</code>{" "}
+          -&gt; <code>F</code> -&gt; <code>?</code>
         </p>
       </div>
 
       <div className="sticky bottom-4 flex flex-wrap gap-2 rounded-lg bg-background/80 p-2 backdrop-blur-sm">
-        <Button variant="outline" size="sm" onClick={handleHint} className="gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleHint}
+          className="gap-2"
+        >
           <Lightbulb className="h-4 w-4" />
           Hint ({hintsUsed})
         </Button>
-        <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleReset}
+          className="gap-2"
+        >
           <RotateCcw className="h-4 w-4" />
           Reset
         </Button>
-        <Button size="lg" disabled={!allFilled} onClick={handleSubmit} className="ml-auto gap-2">
+        <Button
+          size="lg"
+          disabled={!allFilled}
+          onClick={handleSubmit}
+          className="ml-auto gap-2"
+        >
           <Check className="h-4 w-4" />
           {allFilled ? "Submit" : `${totalRows - filledCount} baris lagi`}
         </Button>

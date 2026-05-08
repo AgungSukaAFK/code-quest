@@ -66,8 +66,14 @@ export async function POST(request: NextRequest) {
         .eq("module_id", module_id);
 
       if (exclude_ids.length > 0) {
-        const quotedIds = exclude_ids.map((id) => `"${id.replaceAll('"', "")}"`);
-        fallbackQuery = fallbackQuery.not("id", "in", `(${quotedIds.join(",")})`);
+        const quotedIds = exclude_ids.map(
+          (id) => `"${id.replaceAll('"', "")}"`,
+        );
+        fallbackQuery = fallbackQuery.not(
+          "id",
+          "in",
+          `(${quotedIds.join(",")})`,
+        );
       }
 
       const { data: fallbackPuzzles } = await fallbackQuery;
@@ -76,7 +82,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (!candidatePuzzles || candidatePuzzles.length === 0) {
-      return NextResponse.json({ error: "No more puzzles", completed: true }, { status: 404 });
+      return NextResponse.json(
+        { error: "No more puzzles", completed: true },
+        { status: 404 },
+      );
     }
 
     const selected =

@@ -1,18 +1,22 @@
-'use client'
+"use client";
 
-import { motion } from 'framer-motion'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { motion } from "framer-motion";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface PlayerAvatarProps {
-  position: { x: number; y: number }
-  avatarSeed?: string | null
-  username?: string | null
+  position: { x: number; y: number };
+  avatarSeed?: string | null;
+  username?: string | null;
 }
 
-export function PlayerAvatar({ position, avatarSeed, username }: PlayerAvatarProps) {
+export function PlayerAvatar({
+  position,
+  avatarSeed,
+  username,
+}: PlayerAvatarProps) {
   const avatarUrl = avatarSeed
     ? `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(avatarSeed)}`
-    : undefined
+    : undefined;
 
   return (
     <motion.div
@@ -24,17 +28,17 @@ export function PlayerAvatar({ position, avatarSeed, username }: PlayerAvatarPro
     >
       <motion.div
         animate={{ y: [0, -4, 0] }}
-        transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
         className="flex flex-col items-center gap-1"
       >
         <Avatar className="h-10 w-10 border-4 border-white shadow-xl sm:h-12 sm:w-12">
           <AvatarImage src={avatarUrl} />
-          <AvatarFallback>{username?.[0]?.toUpperCase() || 'P'}</AvatarFallback>
+          <AvatarFallback>{username?.[0]?.toUpperCase() || "P"}</AvatarFallback>
         </Avatar>
         <div className="whitespace-nowrap text-xs font-bold text-white drop-shadow-lg">
-          {username || 'Petualang'}
+          {username || "Petualang"}
         </div>
       </motion.div>
     </motion.div>
-  )
+  );
 }
