@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, Map, User as UserIcon } from "lucide-react";
+import { BrainCircuit, LogOut, Map, User as UserIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,6 +64,10 @@ export function Header({ user }: HeaderProps) {
               <DropdownMenuItem onClick={() => router.push("/world-map")}>
                 <Map className="mr-2 h-4 w-4" />
                 Peta Dunia
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/rl-dashboard")}>
+                <BrainCircuit className="mr-2 h-4 w-4" />
+                RL Dashboard
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => router.push("/profile")}>
                 <UserIcon className="mr-2 h-4 w-4" />

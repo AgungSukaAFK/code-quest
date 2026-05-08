@@ -15,14 +15,15 @@ interface Props {
     timeSpent: number,
     hintsUsed: number,
   ) => void;
+  isSubmitting?: boolean;
 }
 
-export function BooleanPuzzle({ puzzle, onSubmit }: Props) {
+export function BooleanPuzzle({ puzzle, onSubmit, isSubmitting }: Props) {
   const totalRows = puzzle.content.rows.length;
   const [outputs, setOutputs] = useState<(boolean | null)[]>(
     Array(totalRows).fill(null),
   );
-  const [startTime, setStartTime] = useState(Date.now());
+  const [startTime, setStartTime] = useState(() => Date.now());
   const [hintsUsed, setHintsUsed] = useState(0);
   const [showHint, setShowHint] = useState(false);
 
@@ -171,12 +172,16 @@ export function BooleanPuzzle({ puzzle, onSubmit }: Props) {
         </Button>
         <Button
           size="lg"
-          disabled={!allFilled}
+          disabled={!allFilled || isSubmitting}
           onClick={handleSubmit}
           className="ml-auto gap-2"
         >
           <Check className="h-4 w-4" />
-          {allFilled ? "Submit" : `${totalRows - filledCount} baris lagi`}
+          {isSubmitting
+            ? "Memproses..."
+            : allFilled
+              ? "Submit"
+              : `${totalRows - filledCount} baris lagi`}
         </Button>
       </div>
     </div>

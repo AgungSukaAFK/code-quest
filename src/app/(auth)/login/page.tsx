@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,10 +66,12 @@ export default function LoginPage() {
 
     if (error) {
       setError(error.message);
+      toast.error(error.message);
       setLoading(false);
       return;
     }
 
+    toast.success("Login berhasil.");
     router.push("/world-map");
     router.refresh();
   };
@@ -88,6 +91,7 @@ export default function LoginPage() {
 
     if (error) {
       setError(error.message);
+      toast.error(error.message);
       setLoading(false);
       return;
     }
@@ -113,6 +117,7 @@ export default function LoginPage() {
 
       if (signUpError) {
         setError(signUpError.message);
+        toast.error(signUpError.message);
         setLoading(false);
         return;
       }
@@ -123,12 +128,13 @@ export default function LoginPage() {
       });
     }
 
+    toast.success(`Login demo ${demo.label} berhasil.`);
     router.push("/world-map");
     router.refresh();
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-slate-800">
+    <main className="min-h-screen flex items-center justify-center p-4 bg-linear-to-br from-slate-900 to-slate-800">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-white mb-2">CodeQuest 🎮</h1>
@@ -243,6 +249,9 @@ export default function LoginPage() {
                         disabled={loading}
                         className="w-full flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent transition-colors text-left disabled:opacity-50"
                       >
+                        {loading && (
+                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                        )}
                         <div className="p-2 rounded-md bg-primary/10">
                           <Icon className="h-5 w-5 text-primary" />
                         </div>

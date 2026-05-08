@@ -33,7 +33,7 @@ export const MAP_NODES: MapNode[] = [
     id: "LOCKED_1",
     name: "Region Misterius",
     type: "locked",
-    position: { x: 50, y: 15 },
+    position: { x: 50, y: 29 },
     iconName: "Lock",
     description: "Akan terbuka di update berikutnya",
   },

@@ -37,7 +37,7 @@ export function WorldMapClient({ username, avatarSeed }: WorldMapClientProps) {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="pointer-events-none absolute left-1/2 top-4 z-30 -translate-x-1/2 text-center"
+        className="pointer-events-none absolute left-1/2 top-5 z-30 -translate-x-1/2 text-center sm:top-6"
       >
         <h1 className="text-2xl font-bold text-white drop-shadow-lg sm:text-4xl">
           World of Logikalia

@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      await runRlUpdate({
+      const rlUpdate = await runRlUpdate({
         userId: user.id,
         attemptId: attempt.id,
         puzzle,
@@ -116,6 +116,12 @@ export async function POST(request: NextRequest) {
         hintsUsed: hints_used,
         gaveUp: gave_up,
         rlContext: rl_context,
+      });
+
+      return NextResponse.json({
+        result,
+        attempt_id: attempt.id,
+        rl_update: rlUpdate,
       });
     } catch (rlError) {
       console.error("RL update error:", rlError);
@@ -146,7 +152,14 @@ async function runRlUpdate(params: {
     state?: RLState;
     state_key?: string;
   };
-}) {
+}): Promise<{
+  reward: number;
+  q_value_before: number;
+  q_value_after: number;
+  td_error: number;
+  state_key_before: string;
+  state_key_after: string;
+}> {
   const {
     userId,
     attemptId,
@@ -247,6 +260,15 @@ async function runRlUpdate(params: {
       },
     })
     .eq("id", attemptId);
+
+  return {
+    reward: rewardResult.total,
+    q_value_before: updateResult.q_value_before,
+    q_value_after: updateResult.q_value_after,
+    td_error: updateResult.td_error,
+    state_key_before: stateKeyBefore,
+    state_key_after: stateKeyAfter,
+  };
 }
 
 function clamp(value: number, min: number, max: number) {

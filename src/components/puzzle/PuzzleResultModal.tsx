@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, Sparkles, X, XCircle } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import confetti from "canvas-confetti";
 
 interface PuzzleResultModalProps {
   open: boolean;
@@ -24,6 +26,17 @@ export function PuzzleResultModal({
   onContinue,
   onRetry,
 }: PuzzleResultModalProps) {
+  useEffect(() => {
+    if (open && result?.solved) {
+      confetti({
+        particleCount: 90,
+        spread: 70,
+        startVelocity: 32,
+        origin: { y: 0.62 },
+      });
+    }
+  }, [open, result?.solved]);
+
   if (!result) return null;
 
   const solved = result.solved;

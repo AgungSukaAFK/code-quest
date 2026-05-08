@@ -1,9 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, BrainCircuit, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { DecompositionSortPuzzle } from "@/components/puzzle/decomposition/DecompositionSortPuzzle";
+import { BooleanPuzzle } from "@/components/puzzle/boolean/BooleanPuzzle";
+import { PuzzleResultModal } from "@/components/puzzle/PuzzleResultModal";
+import { RLInsightPanel } from "@/components/rl/RLInsightPanel";
+import { buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import type {
   PuzzleBase,
   PuzzleResult,
@@ -11,12 +19,15 @@ import type {
   TruthTablePuzzle,
 } from "@/types/puzzle";
 import type { RLState } from "@/lib/rl/types";
-import { buttonVariants } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { DecompositionSortPuzzle } from "@/components/puzzle/decomposition/DecompositionSortPuzzle";
-import { BooleanPuzzle } from "@/components/puzzle/boolean/BooleanPuzzle";
-import { PuzzleResultModal } from "@/components/puzzle/PuzzleResultModal";
+
+interface RLUpdateInfo {
+  reward: number;
+  q_value_before: number;
+  q_value_after: number;
+  td_error: number;
+  state_key_before: string;
+  state_key_after: string;
+}
 
 interface PlayClientProps {
   module: {
@@ -37,6 +48,15 @@ export function PlayClient({ module, sessionId }: PlayClientProps) {
   const [result, setResult] = useState<PuzzleResult | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [puzzleRenderKey, setPuzzleRenderKey] = useState(0);
+  const [showRLInsight, setShowRLInsight] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const demoEnabled = params.get("demo");
+    return demoEnabled === "1" || demoEnabled === "true";
+  });
   const [rlContext, setRlContext] = useState<{
     action: number;
     was_exploration: boolean;
@@ -44,7 +64,9 @@ export function PlayClient({ module, sessionId }: PlayClientProps) {
     state: RLState;
     state_key: string;
   } | null>(null);
-  const puzzleStartTime = useRef<number>(Date.now());
+  const [lastReward, setLastReward] = useState<number | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<RLUpdateInfo | null>(null);
+  const puzzleStartTime = useRef<number>(0);
 
   const progressLabel = useMemo(
     () => `Puzzle selesai: ${completedPuzzleIds.length}`,
@@ -56,7 +78,19 @@ export function PlayClient({ module, sessionId }: PlayClientProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadNextPuzzle = async () => {
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "d") {
+        event.preventDefault();
+        setShowRLInsight((current) => !current);
+      }
+    };
+
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
+
+  async function loadNextPuzzle() {
     setLoading(true);
 
     try {
@@ -73,6 +107,10 @@ export function PlayClient({ module, sessionId }: PlayClientProps) {
       if (response.status === 404) {
         router.push(`/world-map?completed=${module.id}`);
         return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Gagal memuat puzzle berikutnya.");
       }
 
       const data = await response.json();
@@ -92,10 +130,11 @@ export function PlayClient({ module, sessionId }: PlayClientProps) {
       setPuzzleRenderKey((key) => key + 1);
     } catch (error) {
       console.error("Load puzzle error:", error);
+      toast.error("Gagal memuat puzzle berikutnya. Coba lagi.");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const handleSubmit = async (
     answer: { mapping: Record<string, string> } | TruthTableAnswer,
@@ -124,11 +163,27 @@ export function PlayClient({ module, sessionId }: PlayClientProps) {
         }),
       });
 
-      const data = await response.json();
-      setResult(data.result as PuzzleResult);
+      if (!response.ok) {
+        throw new Error("Gagal mengirim jawaban.");
+      }
+
+      const data = (await response.json()) as {
+        result: PuzzleResult;
+        rl_update?: RLUpdateInfo;
+      };
+
+      setResult(data.result);
+      setLastReward(data.rl_update?.reward ?? null);
+      setLastUpdate(data.rl_update ?? null);
+      toast.success(
+        data.result.solved
+          ? "Puzzle berhasil diselesaikan."
+          : "Jawaban terkirim.",
+      );
       setShowResult(true);
     } catch (error) {
       console.error("Submit error:", error);
+      toast.error("Gagal mengirim jawaban. Coba lagi.");
     } finally {
       setSubmitting(false);
     }
@@ -154,7 +209,7 @@ export function PlayClient({ module, sessionId }: PlayClientProps) {
 
   if (loading) {
     return (
-      <main className="container mx-auto min-h-[400px] max-w-4xl px-4 py-8">
+      <main className="container mx-auto min-h-100 max-w-7xl px-4 py-8">
         <div className="flex h-full items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -164,7 +219,7 @@ export function PlayClient({ module, sessionId }: PlayClientProps) {
 
   if (!currentPuzzle) {
     return (
-      <main className="container mx-auto max-w-4xl px-4 py-8">
+      <main className="container mx-auto max-w-7xl px-4 py-8">
         <Card className="p-8 text-center">
           <h2 className="mb-2 text-2xl font-bold">Selesai!</h2>
           <p className="mb-4 text-muted-foreground">
@@ -185,8 +240,8 @@ export function PlayClient({ module, sessionId }: PlayClientProps) {
   }
 
   return (
-    <main className="container mx-auto max-w-4xl px-4 py-6 pb-24">
-      <div className="mb-4 flex items-center justify-between gap-4">
+    <main className="container mx-auto max-w-7xl px-4 py-6 pb-24">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/world-map"
           className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "")}
@@ -194,35 +249,83 @@ export function PlayClient({ module, sessionId }: PlayClientProps) {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Kembali ke Peta
         </Link>
-        <span className="text-xs text-muted-foreground sm:text-sm">
-          {progressLabel}
-        </span>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground sm:text-sm">
+            {progressLabel}
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowRLInsight((current) => !current)}
+            className={cn(
+              buttonVariants({
+                variant: showRLInsight ? "default" : "outline",
+                size: "sm",
+              }),
+            )}
+          >
+            <BrainCircuit className="mr-2 h-4 w-4" />
+            {showRLInsight ? "Sembunyikan RL" : "Tampilkan RL"}
+          </button>
+        </div>
       </div>
 
-      {currentPuzzle.type === "decomposition_sort" && (
-        <DecompositionSortPuzzle
-          key={puzzleRenderKey}
-          puzzle={currentPuzzle}
-          onSubmit={(answer) =>
-            handleSubmit(
-              { mapping: answer.mapping },
-              undefined,
-              answer.hints_used,
-            )
-          }
-          isSubmitting={submitting}
-        />
-      )}
+      <div
+        className={cn(
+          "grid gap-4",
+          showRLInsight ? "lg:grid-cols-[minmax(0,1fr)_320px]" : "",
+        )}
+      >
+        <div className="space-y-4">
+          {currentPuzzle.type === "decomposition_sort" && (
+            <DecompositionSortPuzzle
+              key={puzzleRenderKey}
+              puzzle={currentPuzzle}
+              onSubmit={(answer) =>
+                handleSubmit(
+                  { mapping: answer.mapping },
+                  undefined,
+                  answer.hints_used,
+                )
+              }
+              isSubmitting={submitting}
+            />
+          )}
 
-      {currentPuzzle.type === "truth_table" && (
-        <BooleanPuzzle
-          key={puzzleRenderKey}
-          puzzle={currentPuzzle as TruthTablePuzzle}
-          onSubmit={(answer, timeSpent, hintsUsed) =>
-            handleSubmit(answer, timeSpent, hintsUsed)
-          }
-        />
-      )}
+          {currentPuzzle.type === "truth_table" && (
+            <BooleanPuzzle
+              key={puzzleRenderKey}
+              puzzle={currentPuzzle as TruthTablePuzzle}
+              isSubmitting={submitting}
+              onSubmit={(answer, timeSpent, hintsUsed) =>
+                handleSubmit(answer, timeSpent, hintsUsed)
+              }
+            />
+          )}
+        </div>
+
+        {showRLInsight && (
+          <div className="lg:sticky lg:top-4 lg:self-start">
+            <RLInsightPanel
+              state={rlContext?.state ?? null}
+              decision={
+                rlContext
+                  ? {
+                      action: rlContext.action,
+                      was_exploration: rlContext.was_exploration,
+                      q_value_before: lastUpdate?.q_value_before ?? 0,
+                      epsilon_at_decision: rlContext.epsilon_at_decision,
+                      chosen_difficulty: currentPuzzle.difficulty,
+                    }
+                  : null
+              }
+              stateKey={rlContext?.state_key ?? null}
+              lastReward={lastReward}
+              lastUpdate={lastUpdate}
+            />
+          </div>
+        )}
+      </div>
 
       <PuzzleResultModal
         open={showResult}
