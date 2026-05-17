@@ -30,6 +30,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Cold-start guard: brand-new account with zero attempts ever
+    // → skip RL, serve difficulty 2 (easy but not the absolute easiest)
+    const { count: totalAttempts } = await supabase
+      .from("attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
+    const isColdStart = (totalAttempts ?? 0) === 0;
+
+    if (isColdStart) {
+      let query = supabase
+        .from("puzzles")
+        .select("*")
+        .eq("module_id", module_id)
+        .eq("difficulty", 2);
+
+      if (exclude_ids.length > 0) {
+        const quotedIds = exclude_ids.map((id) => `"${id.replaceAll('"', "")}"`);
+        query = query.not("id", "in", `(${quotedIds.join(",")})`);
+      }
+
+      const { data: coldPuzzles } = await query;
+      const pool = coldPuzzles && coldPuzzles.length > 0 ? coldPuzzles : null;
+
+      if (pool) {
+        const selected = pool[Math.floor(Math.random() * pool.length)];
+        return NextResponse.json({ puzzle: selected });
+      }
+      // If no difficulty-2 puzzles exist, fall through to normal RL flow
+    }
+
     const state = await buildStudentState(user.id, module_id);
     const agent = await loadAgent(module_id);
     const decision = agent.selectAction(state);

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   Zap,
@@ -9,16 +10,22 @@ import {
   Target,
 } from "lucide-react";
 
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Navigation Header */}
       <header className="border-b border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-2 font-semibold text-lg">
-            <Brain className="w-5 h-5 text-primary" />
-            <span>CodeQuest</span>
-          </div>
+          <Image
+            src="/images/codequest.webp"
+            alt="CodeQuest"
+            width={200}
+            height={52}
+            className="h-12 w-auto"
+            style={{ width: "auto" }}
+            unoptimized
+          />
           <Link href="/login">
             <Button variant="outline" size="sm">
               Masuk
@@ -174,6 +181,44 @@ export default function LandingPage() {
                 Buat Akun
               </Button>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Partner Logos */}
+      <section className="border-t border-border bg-muted/20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <p className="text-center text-xs text-muted-foreground mb-5 uppercase tracking-wider">
+            Didukung oleh
+          </p>
+          <div className="flex items-center justify-center gap-10 sm:gap-16 flex-wrap">
+            <Image
+              src="/images/kemdikbud.webp"
+              alt="Kementerian Pendidikan, Kebudayaan, Riset, dan Teknologi"
+              width={180}
+              height={64}
+              className="h-14 sm:h-16 w-auto object-contain"
+              style={{ width: "auto" }}
+              unoptimized
+            />
+            <Image
+              src="/images/unbaja.webp"
+              alt="Universitas Banten Jaya"
+              width={180}
+              height={64}
+              className="h-14 sm:h-16 w-auto object-contain"
+              style={{ width: "auto" }}
+              unoptimized
+            />
+            <Image
+              src="/images/uniba.webp"
+              alt="Universitas Bina Bangsa"
+              width={180}
+              height={64}
+              className="h-14 sm:h-16 w-auto object-contain"
+              style={{ width: "auto" }}
+              unoptimized
+            />
           </div>
         </div>
       </section>

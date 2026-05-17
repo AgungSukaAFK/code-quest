@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -137,7 +138,17 @@ export default function LoginPage() {
     <main className="min-h-screen flex items-center justify-center p-4 bg-linear-to-br from-slate-900 to-slate-800">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-white mb-2">CodeQuest 🎮</h1>
+          <div className="flex justify-center mb-3">
+            <Image
+              src="/images/codequest.webp"
+              alt="CodeQuest"
+              width={280}
+              height={72}
+              className="h-20 w-auto"
+              style={{ width: "auto" }}
+              unoptimized
+            />
+          </div>
           <p className="text-slate-400">
             Game Edukasi Penalaran Logis-Komputasional
           </p>
@@ -270,6 +281,41 @@ export default function LoginPage() {
             </Tabs>
           </CardContent>
         </Card>
+
+        <div className="rounded-xl bg-white/5 border border-white/10 px-6 py-5">
+          <p className="text-center text-xs text-slate-500 mb-4 uppercase tracking-wider">
+            Didukung oleh
+          </p>
+          <div className="flex items-center justify-center gap-6 flex-wrap">
+            <Image
+              src="/images/kemdikbud.webp"
+              alt="Kementerian Pendidikan, Kebudayaan, Riset, dan Teknologi"
+              width={120}
+              height={44}
+              className="h-11 w-auto object-contain"
+              style={{ width: "auto" }}
+              unoptimized
+            />
+            <Image
+              src="/images/unbaja.webp"
+              alt="Universitas Banten Jaya"
+              width={120}
+              height={44}
+              className="h-11 w-auto object-contain"
+              style={{ width: "auto" }}
+              unoptimized
+            />
+            <Image
+              src="/images/uniba.webp"
+              alt="Universitas Bina Bangsa"
+              width={120}
+              height={44}
+              className="h-11 w-auto object-contain"
+              style={{ width: "auto" }}
+              unoptimized
+            />
+          </div>
+        </div>
       </div>
     </main>
   );

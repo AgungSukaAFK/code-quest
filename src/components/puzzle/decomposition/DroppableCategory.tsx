@@ -9,6 +9,9 @@ interface DroppableCategoryProps {
   category: Category;
   tasks: Task[];
   isDisabled?: boolean;
+  selectedTaskId?: string | null;
+  onTaskTap?: (taskId: string) => void;
+  onTap?: () => void;
 }
 
 const colorClasses: Record<string, string> = {
@@ -22,6 +25,9 @@ export function DroppableCategory({
   category,
   tasks,
   isDisabled,
+  selectedTaskId,
+  onTaskTap,
+  onTap,
 }: DroppableCategoryProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: category.id,
@@ -30,15 +36,18 @@ export function DroppableCategory({
 
   const colorClass =
     colorClasses[category.color || "blue"] || colorClasses.blue;
+  const hasSelection = !!selectedTaskId && !isDisabled;
 
   return (
     <div
       ref={setNodeRef}
+      onClick={onTap}
       className={cn(
-        "flex min-h-[150px] flex-col gap-2 rounded-xl border-2 border-dashed p-4",
+        "flex min-h-30 flex-col gap-2 rounded-xl border-2 border-dashed p-4",
         "transition-all",
         colorClass,
         isOver && "scale-[1.02] ring-4 ring-primary/30",
+        hasSelection && "cursor-pointer hover:ring-2 hover:ring-primary/40 hover:scale-[1.01]",
       )}
     >
       <div className="text-sm font-bold uppercase tracking-wide opacity-80">
@@ -46,12 +55,18 @@ export function DroppableCategory({
       </div>
       <div className="flex flex-1 flex-col gap-2">
         {tasks.length === 0 && (
-          <div className="py-4 text-center text-xs italic text-muted-foreground">
-            Drop task di sini
+          <div className="py-3 text-center text-xs italic text-muted-foreground">
+            {hasSelection ? "Tap di sini untuk menempatkan" : "Drop task di sini"}
           </div>
         )}
         {tasks.map((task) => (
-          <DraggableTask key={task.id} task={task} isDisabled={isDisabled} />
+          <DraggableTask
+            key={task.id}
+            task={task}
+            isDisabled={isDisabled}
+            isSelected={selectedTaskId === task.id}
+            onTap={() => onTaskTap?.(task.id)}
+          />
         ))}
       </div>
     </div>
