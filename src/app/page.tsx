@@ -8,7 +8,17 @@ import {
   ArrowRight,
   Lightbulb,
   Target,
+  BookOpen,
+  Download,
 } from "lucide-react";
+
+const MODULES = [
+  {
+    title: "Modul Hibah Penelitian",
+    description: "Modul pembelajaran Computational Thinking untuk siswa SMK.",
+    file: "/files/Modul Hibah Penelitian.pdf",
+  },
+];
 
 
 export default function LandingPage() {
@@ -154,6 +164,66 @@ export default function LandingPage() {
                 Kembali ke world map dan buka puzzle berikutnya.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Modul Pembelajaran */}
+      <section className="border-t border-border bg-primary/5">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center p-3 bg-primary/15 rounded-2xl mb-5">
+              <BookOpen className="w-8 h-8 text-primary" />
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold mb-3">
+              Modul Pembelajaran
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+              Materi pendukung yang bisa kamu baca atau unduh untuk memperkuat
+              pemahaman.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-6">
+            {MODULES.map((mod) => (
+              <div
+                key={mod.file}
+                className="w-full max-w-md border border-primary/20 rounded-2xl p-7 bg-card shadow-sm flex flex-col gap-5"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-primary/10 rounded-xl shrink-0">
+                    <BookOpen className="w-7 h-7 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold leading-snug mb-1">
+                      {mod.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {mod.description}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <a
+                    href={mod.file}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1"
+                  >
+                    <Button variant="outline" size="lg" className="w-full">
+                      <BookOpen className="mr-2 h-4 w-4" />
+                      Buka Modul
+                    </Button>
+                  </a>
+                  <a href={mod.file} download className="flex-1">
+                    <Button size="lg" className="w-full">
+                      <Download className="mr-2 h-4 w-4" />
+                      Unduh
+                    </Button>
+                  </a>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

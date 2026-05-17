@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BrainCircuit, LogOut, Map, Trophy, User as UserIcon } from "lucide-react";
+import { BookOpen, BrainCircuit, LogOut, Map, Trophy, User as UserIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -104,6 +104,18 @@ export function Header({ user }: HeaderProps) {
               <DropdownMenuItem onClick={() => router.push("/world-map")}>
                 <Map className="mr-2 h-4 w-4" />
                 Peta Dunia
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  window.open(
+                    "/files/Modul Hibah Penelitian.pdf",
+                    "_blank",
+                    "noopener,noreferrer",
+                  )
+                }
+              >
+                <BookOpen className="mr-2 h-4 w-4" />
+                Modul Pembelajaran
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => router.push("/leaderboard")}>
                 <Trophy className="mr-2 h-4 w-4" />
