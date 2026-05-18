@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BookOpen, BrainCircuit, LogOut, Map, Trophy, User as UserIcon } from "lucide-react";
+import { BookOpen, BrainCircuit, LogOut, Map, Settings2, Trophy, User as UserIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +20,7 @@ interface HeaderProps {
     email?: string;
     username?: string | null;
     avatar_seed?: string | null;
+    role?: string | null;
   } | null;
 }
 
@@ -122,14 +123,25 @@ export function Header({ user }: HeaderProps) {
                 <Trophy className="mr-2 h-4 w-4" />
                 Leaderboard
               </DropdownMenuItem>
-              <DropdownMenuItem className="py-2.5" onClick={() => router.push("/rl-dashboard")}>
-                <BrainCircuit className="mr-2 h-4 w-4" />
-                RL Dashboard
-              </DropdownMenuItem>
+              {user?.role === "moderator" && (
+                <DropdownMenuItem className="py-2.5" onClick={() => router.push("/rl-dashboard")}>
+                  <BrainCircuit className="mr-2 h-4 w-4" />
+                  RL Dashboard
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem className="py-2.5" onClick={() => router.push("/profile")}>
                 <UserIcon className="mr-2 h-4 w-4" />
                 Profil
               </DropdownMenuItem>
+              {user?.role === "moderator" && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="py-2.5" onClick={() => router.push("/moderator/users")}>
+                    <Settings2 className="mr-2 h-4 w-4" />
+                    Manajemen Pengguna
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem className="py-2.5" onClick={handleSignOut}>
                 <LogOut className="mr-2 h-4 w-4" />

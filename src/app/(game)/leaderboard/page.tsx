@@ -26,7 +26,7 @@ export default async function LeaderboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username, avatar_seed")
+    .select("username, avatar_seed, role")
     .eq("id", user.id)
     .single();
 
@@ -84,6 +84,7 @@ export default async function LeaderboardPage() {
           email: user.email,
           username: profile?.username,
           avatar_seed: profile?.avatar_seed,
+          role: profile?.role,
         }}
       />
       <LeaderboardClient entries={entries} currentUserId={user.id} />

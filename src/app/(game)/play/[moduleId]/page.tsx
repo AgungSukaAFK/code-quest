@@ -49,6 +49,7 @@ export default async function PlayPage({ params }: PlayPageProps) {
           email: user.email,
           username: profile?.username,
           avatar_seed: profile?.avatar_seed,
+          role: profile?.role,
         }}
       />
 

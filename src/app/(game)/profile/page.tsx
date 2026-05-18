@@ -71,6 +71,7 @@ export default async function ProfilePage() {
           email: user.email,
           username: profile.username,
           avatar_seed: profile.avatar_seed,
+          role: profile.role,
         }}
       />
       <ProfileClient

@@ -50,6 +50,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [className, setClassName] = useState("");
 
   const handleSignIn = async (
     e?: React.FormEvent,
@@ -82,7 +83,13 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signUp({
+    if (!className) {
+      setError("Pilih kelas terlebih dahulu.");
+      setLoading(false);
+      return;
+    }
+
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -95,6 +102,13 @@ export default function LoginPage() {
       toast.error(error.message);
       setLoading(false);
       return;
+    }
+
+    if (signUpData.user) {
+      await supabase
+        .from("profiles")
+        .update({ class_name: className, role: "siswa" })
+        .eq("id", signUpData.user.id);
     }
 
     await handleSignIn(undefined, email, password);
@@ -234,6 +248,21 @@ export default function LoginPage() {
                       placeholder="Min. 6 karakter"
                       minLength={6}
                     />
+                  </div>
+                  <div>
+                    <Label htmlFor="class-signup">Kelas</Label>
+                    <select
+                      id="class-signup"
+                      value={className}
+                      onChange={(e) => setClassName(e.target.value)}
+                      required
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <option value="">-- Pilih Kelas --</option>
+                      <option value="Kelas A">Kelas A</option>
+                      <option value="Kelas B">Kelas B</option>
+                      <option value="Kelas C">Kelas C</option>
+                    </select>
                   </div>
                   {error && <p className="text-sm text-red-500">{error}</p>}
                   <Button type="submit" className="w-full" disabled={loading}>

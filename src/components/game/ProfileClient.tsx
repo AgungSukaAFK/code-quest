@@ -58,7 +58,6 @@ const profileSchema = z.object({
     .min(3, "Min. 3 karakter")
     .max(30, "Maks. 30 karakter")
     .regex(/^[a-zA-Z0-9_]+$/, "Hanya huruf, angka, dan underscore"),
-  class_name: z.string().max(50).optional(),
 });
 
 const passwordSchema = z
@@ -122,7 +121,6 @@ export function ProfileClient({
     defaultValues: {
       display_name: profile.display_name ?? "",
       username: profile.username ?? "",
-      class_name: profile.class_name ?? "",
     },
   });
 
@@ -139,7 +137,6 @@ export function ProfileClient({
         .update({
           display_name: data.display_name,
           username: data.username,
-          class_name: data.class_name || null,
         })
         .eq("id", profile.id);
 
@@ -400,12 +397,15 @@ export function ProfileClient({
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="class_name">Kelas</Label>
+                  <Label>Kelas</Label>
                   <Input
-                    id="class_name"
-                    {...profileForm.register("class_name")}
-                    placeholder="cth: X RPL 1"
+                    value={profile.class_name ?? "Belum ditentukan"}
+                    disabled
+                    className="bg-muted"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Kelas hanya dapat diubah oleh moderator.
+                  </p>
                 </div>
 
                 <div className="space-y-1.5">

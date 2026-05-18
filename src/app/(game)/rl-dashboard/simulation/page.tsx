@@ -18,6 +18,8 @@ export default async function RLSimulationPage() {
     .eq("id", user.id)
     .single();
 
+  if (profile?.role !== "moderator") redirect("/world-map");
+
   const { data: modules } = await supabase
     .from("modules")
     .select("id,name,description")
@@ -37,6 +39,7 @@ export default async function RLSimulationPage() {
           email: user.email,
           username: profile?.username,
           avatar_seed: profile?.avatar_seed,
+          role: profile?.role,
         }}
       />
 

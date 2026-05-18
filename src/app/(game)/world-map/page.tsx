@@ -26,6 +26,7 @@ export default async function WorldMapPage() {
           email: user.email,
           username: profile?.username,
           avatar_seed: profile?.avatar_seed,
+          role: profile?.role,
         }}
       />
       <WorldMapClient
