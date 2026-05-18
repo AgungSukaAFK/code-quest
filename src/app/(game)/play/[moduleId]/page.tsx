@@ -59,6 +59,8 @@ export default async function PlayPage({ params }: PlayPageProps) {
           description: module.description,
         }}
         sessionId={session.id}
+        avatarSeed={profile?.avatar_seed ?? null}
+        username={profile?.username ?? null}
       />
     </div>
   );

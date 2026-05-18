@@ -100,12 +100,13 @@ export function Header({ user }: HeaderProps) {
                 {user.username ?? "User"}
               </span>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => router.push("/world-map")}>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuItem className="py-2.5" onClick={() => router.push("/world-map")}>
                 <Map className="mr-2 h-4 w-4" />
                 Peta Dunia
               </DropdownMenuItem>
               <DropdownMenuItem
+                className="py-2.5"
                 onClick={() =>
                   window.open(
                     "/files/Modul Hibah Penelitian.pdf",
@@ -117,20 +118,20 @@ export function Header({ user }: HeaderProps) {
                 <BookOpen className="mr-2 h-4 w-4" />
                 Modul Pembelajaran
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push("/leaderboard")}>
+              <DropdownMenuItem className="py-2.5" onClick={() => router.push("/leaderboard")}>
                 <Trophy className="mr-2 h-4 w-4" />
                 Leaderboard
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push("/rl-dashboard")}>
+              <DropdownMenuItem className="py-2.5" onClick={() => router.push("/rl-dashboard")}>
                 <BrainCircuit className="mr-2 h-4 w-4" />
                 RL Dashboard
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push("/profile")}>
+              <DropdownMenuItem className="py-2.5" onClick={() => router.push("/profile")}>
                 <UserIcon className="mr-2 h-4 w-4" />
                 Profil
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut}>
+              <DropdownMenuItem className="py-2.5" onClick={handleSignOut}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Keluar
               </DropdownMenuItem>

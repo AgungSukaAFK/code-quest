@@ -36,9 +36,11 @@ interface PlayClientProps {
     description: string | null;
   };
   sessionId: string;
+  avatarSeed: string | null;
+  username: string | null;
 }
 
-export function PlayClient({ module, sessionId }: PlayClientProps) {
+export function PlayClient({ module, sessionId, avatarSeed, username }: PlayClientProps) {
   const router = useRouter();
 
   const [currentPuzzle, setCurrentPuzzle] = useState<PuzzleBase | null>(null);
@@ -332,6 +334,8 @@ export function PlayClient({ module, sessionId }: PlayClientProps) {
         result={result}
         onContinue={handleContinue}
         onRetry={handleRetry}
+        avatarSeed={avatarSeed}
+        username={username}
       />
     </main>
   );
