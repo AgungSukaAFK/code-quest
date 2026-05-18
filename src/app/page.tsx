@@ -125,43 +125,47 @@ export default function LandingPage() {
           </h2>
 
           <div className="grid md:grid-cols-4 gap-8">
-            <div className="flex flex-col">
+            <div className="flex flex-col items-center text-center md:items-start md:text-left">
               <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold mb-4">
                 1
               </div>
-              <h4 className="font-semibold mb-2">Mulai</h4>
+              <h4 className="font-semibold mb-2">Pilih Modul</h4>
               <p className="text-sm text-muted-foreground">
-                Pilih modul pembelajaran yang ingin dipelajari.
+                Pilih modul di peta dunia — Dekomposisi, Logika Boolean, dan
+                lainnya.
               </p>
             </div>
 
-            <div className="flex flex-col">
+            <div className="flex flex-col items-center text-center md:items-start md:text-left">
               <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold mb-4">
                 2
               </div>
               <h4 className="font-semibold mb-2">Selesaikan Puzzle</h4>
               <p className="text-sm text-muted-foreground">
-                Jawab pertanyaan yang disesuaikan dengan level kamu.
+                Kerjakan puzzle yang otomatis disesuaikan dengan kemampuanmu
+                oleh sistem AI.
               </p>
             </div>
 
-            <div className="flex flex-col">
+            <div className="flex flex-col items-center text-center md:items-start md:text-left">
               <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold mb-4">
                 3
               </div>
-              <h4 className="font-semibold mb-2">Dapatkan Feedback</h4>
+              <h4 className="font-semibold mb-2">Pantau Progress</h4>
               <p className="text-sm text-muted-foreground">
-                Sistem memberikan feedback instan dan hints jika butuh.
+                Lihat perkembangan skill kamu di setiap modul dan bandingkan
+                dengan teman di leaderboard.
               </p>
             </div>
 
-            <div className="flex flex-col">
+            <div className="flex flex-col items-center text-center md:items-start md:text-left">
               <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold mb-4">
                 4
               </div>
-              <h4 className="font-semibold mb-2">Naik Level</h4>
+              <h4 className="font-semibold mb-2">Tantang Sesama</h4>
               <p className="text-sm text-muted-foreground">
-                Kembali ke world map dan buka puzzle berikutnya.
+                Selesaikan semua quiz untuk membuka mode <span className="font-medium text-foreground">Multiplayer</span> — adu
+                kemampuan langsung dengan pemain lain.
               </p>
             </div>
           </div>
