@@ -1,9 +1,9 @@
 export interface MapNode {
   id: string;
   name: string;
-  type: "computational_thinking" | "logic_math" | "locked";
+  type: "computational_thinking" | "logic_math" | "multiplayer" | "locked";
   position: { x: number; y: number };
-  iconName: "Network" | "Binary" | "Lock";
+  iconName: "Network" | "Binary" | "Swords" | "Lock";
   description: string;
 }
 
@@ -30,16 +30,16 @@ export const MAP_NODES: MapNode[] = [
     description: "Pelajari operasi AND, OR, NOT untuk algoritma",
   },
   {
-    id: "LOCKED_1",
-    name: "Region Misterius",
-    type: "locked",
+    id: "ARENA",
+    name: "Arena Pertempuran",
+    type: "multiplayer",
     position: { x: 50, y: 29 },
-    iconName: "Lock",
-    description: "Akan terbuka di update berikutnya",
+    iconName: "Swords",
+    description: "Tantang temanmu dalam kuis 10 soal! Dekomposisi + Boolean. Siapa tercepat menang?",
   },
 ];
 
 export const MAP_PATHS: MapPath[] = [
   { from: "M2", to: "L1" },
-  { from: "L1", to: "LOCKED_1" },
+  { from: "L1", to: "ARENA" },
 ];

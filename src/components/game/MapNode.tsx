@@ -1,13 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Binary, Lock, Network, type LucideIcon } from "lucide-react";
+import { Binary, Lock, Network, Swords, type LucideIcon } from "lucide-react";
 import type { MapNode as MapNodeType } from "@/lib/game/world-map-config";
 import { cn } from "@/lib/utils";
 
 const iconMap: Record<MapNodeType["iconName"], LucideIcon> = {
   Network,
   Binary,
+  Swords,
   Lock,
 };
 
@@ -60,8 +61,10 @@ export function MapNode({
           isLocked
             ? "bg-muted border-border"
             : node.type === "computational_thinking"
-              ? "bg-gradient-to-br from-indigo-500 to-purple-600 border-indigo-300 shadow-lg shadow-indigo-500/40"
-              : "bg-gradient-to-br from-amber-500 to-orange-600 border-amber-300 shadow-lg shadow-amber-500/40",
+              ? "bg-linear-to-br from-indigo-500 to-purple-600 border-indigo-300 shadow-lg shadow-indigo-500/40"
+              : node.type === "multiplayer"
+                ? "bg-linear-to-br from-rose-500 to-pink-600 border-rose-300 shadow-lg shadow-rose-500/40"
+                : "bg-linear-to-br from-amber-500 to-orange-600 border-amber-300 shadow-lg shadow-amber-500/40",
           isSelected && "scale-110 ring-4 ring-white/40",
         )}
       >
