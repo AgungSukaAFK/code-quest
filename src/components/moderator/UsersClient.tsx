@@ -20,12 +20,14 @@ import {
   Pencil,
   Plus,
   Search,
+  Trash2,
+  Upload,
   UserPlus,
 } from "lucide-react";
 import type { ManagedUser } from "@/app/(moderator)/moderator/users/page";
 import { ModeratorNav } from "./ModeratorNav";
 
-const CLASSES = ["Kelas A", "Kelas B", "Kelas C"];
+const CLASSES = ["X TJKT 3"];
 
 interface UsersClientProps {
   users: ManagedUser[];
@@ -65,6 +67,105 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
   const [newStudentFullName, setNewStudentFullName] = useState("");
   const [newStudentClass, setNewStudentClass] = useState("");
   const [creatingStudent, setCreatingStudent] = useState(false);
+
+  // CSV import state
+  const [showImport, setShowImport] = useState(false);
+  const [importClass, setImportClass] = useState("");
+  const [csvText, setCsvText] = useState("");
+  const [importing, setImporting] = useState(false);
+  type ImportResult = { nisn: string; name: string; status: "ok" | "skip" | "error"; message?: string };
+  const [importResults, setImportResults] = useState<ImportResult[] | null>(null);
+
+  function parseCsv(text: string): { nisn: string; full_name: string }[] {
+    const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 0) return [];
+
+    // Auto-detect delimiter: semicolon or comma
+    const delimiter = lines[0].includes(";") ? ";" : ",";
+
+    const rows: { nisn: string; full_name: string }[] = [];
+    for (const line of lines) {
+      const cols = line.split(delimiter).map((c) => c.trim());
+
+      let nisn: string;
+      let full_name: string;
+
+      if (cols.length >= 3) {
+        // Format: NO;NIS;NAMA or NO,NIS,NAMA — col[0] is row number
+        nisn = cols[1] ?? "";
+        full_name = cols[2] ?? "";
+      } else {
+        // Format: NIS;NAMA or NIS,NAMA
+        nisn = cols[0] ?? "";
+        full_name = cols[1] ?? "";
+      }
+
+      // Skip header rows (any column that looks like a label, not a number)
+      if (/^(no\.?|nisn|nis|nomor|nama)/i.test(nisn) || /^(no\.?|nisn|nis|nomor|nama)/i.test(cols[0])) continue;
+
+      if (nisn || full_name) rows.push({ nisn, full_name });
+    }
+    return rows;
+  }
+
+  const csvPreview = parseCsv(csvText);
+
+  async function handleImport() {
+    if (!importClass || csvPreview.length === 0) return;
+    setImporting(true);
+    setImportResults(null);
+    try {
+      const res = await fetch("/api/moderator/import-students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ students: csvPreview, class_name: importClass }),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error ?? "Gagal import"); return; }
+      setImportResults(data.results);
+      const ok = data.results.filter((r: ImportResult) => r.status === "ok").length;
+      if (ok > 0) {
+        toast.success(`${ok} siswa berhasil diimport.`);
+        startTransition(() => router.refresh());
+      }
+    } catch {
+      toast.error("Terjadi kesalahan saat import.");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  // Delete user state
+  const [deleteTarget, setDeleteTarget] = useState<ManagedUser | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/moderator/delete-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: deleteTarget.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error ?? "Gagal menghapus"); return; }
+      toast.success(`Akun ${deleteTarget.display_name ?? deleteTarget.email} berhasil dihapus.`);
+      setDeleteTarget(null);
+      startTransition(() => router.refresh());
+    } catch {
+      toast.error("Terjadi kesalahan.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  function handleCloseImport() {
+    setShowImport(false);
+    setImportClass("");
+    setCsvText("");
+    setImportResults(null);
+  }
 
   const siswaList = users.filter((u) => u.role === "siswa");
   const classStats = CLASSES.map((c) => ({
@@ -116,7 +217,7 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
     }
   };
 
-  const handleCreateModerator = async (e: React.FormEvent) => {
+  const handleCreateModerator = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setCreating(true);
     try {
@@ -146,7 +247,7 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
     }
   };
 
-  const handleCreateStudent = async (e: React.FormEvent) => {
+  const handleCreateStudent = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setCreatingStudent(true);
     try {
@@ -193,6 +294,10 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowImport(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            Import CSV
+          </Button>
           <Button variant="outline" onClick={() => setShowCreateStudent(true)}>
             <GraduationCap className="mr-2 h-4 w-4" />
             Tambah Siswa
@@ -368,16 +473,28 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
                         {formatDate(u.created_at)}
                       </td>
                       <td className="px-4 py-3">
-                        {u.role === "siswa" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleOpenEdit(u)}
-                          >
-                            <Pencil className="h-3.5 w-3.5 mr-1" />
-                            Edit Kelas
-                          </Button>
-                        )}
+                        <div className="flex items-center gap-1">
+                          {u.role === "siswa" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenEdit(u)}
+                            >
+                              <Pencil className="h-3.5 w-3.5 mr-1" />
+                              Edit Kelas
+                            </Button>
+                          )}
+                          {u.id !== currentUserId && u.role !== "moderator" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeleteTarget(u)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -500,6 +617,148 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete user dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Hapus Akun Siswa</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <p className="text-sm text-muted-foreground">
+              Akun{" "}
+              <span className="font-semibold text-foreground">
+                {deleteTarget?.display_name ?? deleteTarget?.email}
+              </span>{" "}
+              {deleteTarget?.nisn && <span>(NISN: {deleteTarget.nisn}) </span>}
+              akan dihapus permanen beserta seluruh data latihannya. Tindakan ini tidak bisa dibatalkan.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>
+                Batal
+              </Button>
+              <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+                {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Hapus Permanen
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import CSV dialog */}
+      <Dialog open={showImport} onOpenChange={(o) => { if (!o) handleCloseImport(); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Import Siswa dari CSV</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+
+            {/* Class selector */}
+            <div className="space-y-1.5">
+              <Label htmlFor="import-class">Kelas Tujuan</Label>
+              <select
+                id="import-class"
+                value={importClass}
+                onChange={(e) => setImportClass(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="">— Pilih Kelas —</option>
+                {CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+
+            {/* CSV input */}
+            <div className="space-y-1.5">
+              <Label htmlFor="csv-text">
+                Tempel isi CSV{" "}
+                <span className="text-muted-foreground font-normal">(format: nisn,nama lengkap)</span>
+              </Label>
+              <textarea
+                id="csv-text"
+                value={csvText}
+                onChange={(e) => { setCsvText(e.target.value); setImportResults(null); }}
+                placeholder={"0099887766,Ahmad Rizki\n0011223344,Siti Nurhaliza"}
+                rows={6}
+                className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm font-mono shadow-xs placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                Baris pertama bisa berupa header (nisn,nama) — akan dilewati otomatis.
+              </p>
+            </div>
+
+            {/* Preview table */}
+            {csvPreview.length > 0 && !importResults && (
+              <div className="rounded-md border overflow-hidden">
+                <div className="bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground border-b">
+                  Preview — {csvPreview.length} siswa
+                </div>
+                <div className="max-h-40 overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <tbody>
+                      {csvPreview.slice(0, 50).map((row, i) => (
+                        <tr key={i} className="border-b last:border-0">
+                          <td className="px-3 py-1.5 font-mono text-muted-foreground w-32">{row.nisn || <span className="text-destructive">kosong</span>}</td>
+                          <td className="px-3 py-1.5">{row.full_name || <span className="text-destructive">kosong</span>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {csvPreview.length > 50 && (
+                    <p className="px-3 py-2 text-xs text-muted-foreground">...dan {csvPreview.length - 50} baris lainnya</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Results */}
+            {importResults && (
+              <div className="rounded-md border overflow-hidden">
+                <div className="bg-muted/40 px-3 py-2 text-xs font-medium border-b flex gap-3">
+                  <span className="text-emerald-600">✓ {importResults.filter((r) => r.status === "ok").length} berhasil</span>
+                  <span className="text-amber-600">↷ {importResults.filter((r) => r.status === "skip").length} dilewati</span>
+                  <span className="text-destructive">✗ {importResults.filter((r) => r.status === "error").length} gagal</span>
+                </div>
+                <div className="max-h-48 overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <tbody>
+                      {importResults.map((r, i) => (
+                        <tr key={i} className="border-b last:border-0">
+                          <td className="px-3 py-1.5 w-6 text-center">
+                            {r.status === "ok" ? "✓" : r.status === "skip" ? "↷" : "✗"}
+                          </td>
+                          <td className="px-3 py-1.5 font-mono text-muted-foreground w-32">{r.nisn}</td>
+                          <td className="px-3 py-1.5">{r.name}</td>
+                          <td className={`px-3 py-1.5 ${r.status === "error" ? "text-destructive" : r.status === "skip" ? "text-amber-600" : "text-emerald-600"}`}>
+                            {r.message ?? (r.status === "ok" ? "OK" : "")}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={handleCloseImport}>
+                {importResults ? "Tutup" : "Batal"}
+              </Button>
+              {!importResults && (
+                <Button
+                  onClick={handleImport}
+                  disabled={importing || !importClass || csvPreview.length === 0}
+                >
+                  {importing
+                    ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Mengimport...</>
+                    : <><Upload className="mr-2 h-4 w-4" />Import {csvPreview.length > 0 ? `${csvPreview.length} Siswa` : ""}</>
+                  }
+                </Button>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
