@@ -7,6 +7,7 @@ import { UsersClient } from "@/components/moderator/UsersClient";
 export interface ManagedUser {
   id: string;
   email: string;
+  nisn: string | null;
   username: string | null;
   display_name: string | null;
   class_name: string | null;
@@ -32,7 +33,7 @@ export default async function ModeratorUsersPage() {
 
   const { data: profiles } = await admin
     .from("profiles")
-    .select("id, username, display_name, class_name, role, created_at")
+    .select("id, nisn, username, display_name, class_name, role, created_at")
     .order("created_at", { ascending: false });
 
   const { data: authUsers } = await admin.auth.admin.listUsers();
@@ -42,6 +43,7 @@ export default async function ModeratorUsersPage() {
     return {
       id: p.id,
       email: authUser?.email ?? "",
+      nisn: p.nisn,
       username: p.username,
       display_name: p.display_name,
       class_name: p.class_name,
@@ -56,6 +58,7 @@ export default async function ModeratorUsersPage() {
         user={{
           id: user.id,
           email: user.email,
+          display_name: currentProfile?.display_name,
           username: currentProfile?.username,
           avatar_seed: currentProfile?.avatar_seed,
           role: currentProfile?.role,

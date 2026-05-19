@@ -40,7 +40,9 @@ export default async function ModeratorPuzzlesPage() {
   const [{ data: puzzles }, { data: modules }] = await Promise.all([
     admin
       .from("puzzles")
-      .select("id, module_id, type, difficulty, title, goal, content, expected_time_sec, concepts_tested")
+      .select(
+        "id, module_id, type, difficulty, title, goal, content, expected_time_sec, concepts_tested",
+      )
       .order("module_id")
       .order("difficulty"),
     admin.from("modules").select("id, name").order("display_order"),
@@ -52,6 +54,7 @@ export default async function ModeratorPuzzlesPage() {
         user={{
           id: user.id,
           email: user.email,
+          display_name: currentProfile?.display_name,
           username: currentProfile?.username,
           avatar_seed: currentProfile?.avatar_seed,
           role: currentProfile?.role,

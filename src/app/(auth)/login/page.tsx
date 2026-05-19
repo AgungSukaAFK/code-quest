@@ -16,59 +16,60 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, GraduationCap, Brain, Rocket } from "lucide-react";
-
-const demoUsers = [
-  {
-    label: "Siswa Pemula",
-    icon: GraduationCap,
-    email: "pemula@codequest.demo",
-    password: "demo123456",
-    description: "Profil siswa baru, belum tahu apa-apa",
-  },
-  {
-    label: "Siswa Reguler",
-    icon: Brain,
-    email: "reguler@codequest.demo",
-    password: "demo123456",
-    description: "Siswa dengan kemampuan rata-rata",
-  },
-  {
-    label: "Siswa Mahir",
-    icon: Rocket,
-    email: "mahir@codequest.demo",
-    password: "demo123456",
-    description: "Siswa cepat tangkap, mau tantangan",
-  },
-];
+import { Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nisn, setNisn] = useState("");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
-  const [className, setClassName] = useState("");
 
-  const handleSignIn = async (
-    e?: React.FormEvent,
-    customEmail?: string,
-    customPassword?: string,
-  ) => {
+  const handleStudentLogin = async (e: React.FormEvent) => {
     e?.preventDefault?.();
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: customEmail ?? email,
-      password: customPassword ?? password,
+    try {
+      const res = await fetch("/api/auth/student-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nisn, fullName }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error ?? "Login gagal.");
+      }
+
+      toast.success("Login berhasil.");
+      router.push("/world-map");
+      router.refresh();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Login gagal.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStaffLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     });
 
-    if (error) {
-      setError(error.message);
-      toast.error(error.message);
+    if (signInError) {
+      setError(signInError.message);
+      toast.error(signInError.message);
       setLoading(false);
       return;
     }
@@ -76,80 +77,11 @@ export default function LoginPage() {
     toast.success("Login berhasil.");
     router.push("/world-map");
     router.refresh();
-  };
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    if (!className) {
-      setError("Pilih kelas terlebih dahulu.");
-      setLoading(false);
-      return;
-    }
-
-    const { data: signUpData, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { username: username || email.split("@")[0] },
-      },
-    });
-
-    if (error) {
-      setError(error.message);
-      toast.error(error.message);
-      setLoading(false);
-      return;
-    }
-
-    if (signUpData.user) {
-      await supabase
-        .from("profiles")
-        .update({ class_name: className, role: "siswa" })
-        .eq("id", signUpData.user.id);
-    }
-
-    await handleSignIn(undefined, email, password);
-  };
-
-  const handleDemoLogin = async (demo: (typeof demoUsers)[0]) => {
-    setLoading(true);
-    setError(null);
-
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: demo.email,
-      password: demo.password,
-    });
-
-    if (signInError) {
-      const { error: signUpError } = await supabase.auth.signUp({
-        email: demo.email,
-        password: demo.password,
-        options: { data: { username: demo.label } },
-      });
-
-      if (signUpError) {
-        setError(signUpError.message);
-        toast.error(signUpError.message);
-        setLoading(false);
-        return;
-      }
-
-      await supabase.auth.signInWithPassword({
-        email: demo.email,
-        password: demo.password,
-      });
-    }
-
-    toast.success(`Login demo ${demo.label} berhasil.`);
-    router.push("/world-map");
-    router.refresh();
+    setLoading(false);
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 bg-linear-to-br from-slate-900 to-slate-800">
+    <main className="min-h-screen flex items-center justify-center p-4 bg-linear-to-br from-slate-50 to-blue-50">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <div className="flex justify-center mb-3">
@@ -157,13 +89,13 @@ export default function LoginPage() {
               src="/images/codequest.webp"
               alt="CodeQuest"
               width={280}
-              height={72}
-              className="h-20 w-auto"
-              style={{ width: "auto" }}
+              height={80}
+              style={{ height: "80px", width: "auto" }}
               unoptimized
+              loading="eager"
             />
           </div>
-          <p className="text-slate-400">
+          <p className="text-slate-600">
             Game Edukasi Penalaran Logis-Komputasional
           </p>
         </div>
@@ -171,167 +103,122 @@ export default function LoginPage() {
         <Card>
           <CardHeader>
             <CardTitle>Mulai Petualangan</CardTitle>
-            <CardDescription>Login atau daftar untuk memulai</CardDescription>
+            <CardDescription>
+              Pilih metode login sesuai akun kamu
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="signin">Login</TabsTrigger>
-                <TabsTrigger value="signup">Daftar</TabsTrigger>
-                <TabsTrigger value="demo">Demo</TabsTrigger>
+            <Tabs defaultValue="student" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="student">Siswa</TabsTrigger>
+                <TabsTrigger value="staff">Moderator/Guru</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="signin">
-                <form onSubmit={handleSignIn} className="space-y-4 mt-4">
+              <TabsContent value="student">
+                <form onSubmit={handleStudentLogin} className="space-y-4 mt-4">
                   <div>
-                    <Label htmlFor="email-signin">Email</Label>
+                    <Label htmlFor="nisn">NISN</Label>
                     <Input
-                      id="email-signin"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      id="nisn"
+                      value={nisn}
+                      onChange={(e) => setNisn(e.target.value)}
                       required
-                      placeholder="kamu@email.com"
+                      placeholder="Contoh: 0099887766"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="password-signin">Password</Label>
-                    <Input
-                      id="password-signin"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      placeholder="••••••••"
-                    />
-                  </div>
-                  {error && <p className="text-sm text-red-500">{error}</p>}
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    Masuk
-                  </Button>
-                </form>
-              </TabsContent>
 
-              <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4 mt-4">
                   <div>
-                    <Label htmlFor="username">Nama Pengguna</Label>
+                    <Label htmlFor="full-name">Nama Lengkap</Label>
                     <Input
-                      id="username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Nama panggilan kamu"
+                      id="full-name"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required
+                      placeholder="Nama sesuai data moderator"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="email-signup">Email</Label>
-                    <Input
-                      id="email-signup"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      placeholder="kamu@email.com"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="password-signup">Password</Label>
-                    <Input
-                      id="password-signup"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      placeholder="Min. 6 karakter"
-                      minLength={6}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="class-signup">Kelas</Label>
-                    <select
-                      id="class-signup"
-                      value={className}
-                      onChange={(e) => setClassName(e.target.value)}
-                      required
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    >
-                      <option value="">-- Pilih Kelas --</option>
-                      <option value="Kelas A">Kelas A</option>
-                      <option value="Kelas B">Kelas B</option>
-                      <option value="Kelas C">Kelas C</option>
-                    </select>
-                  </div>
-                  {error && <p className="text-sm text-red-500">{error}</p>}
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    Daftar
-                  </Button>
-                </form>
-              </TabsContent>
 
-              <TabsContent value="demo">
-                <div className="space-y-3 mt-4">
                   <p className="text-xs text-muted-foreground">
-                    Login cepat untuk demo. RL akan adapt berbeda untuk setiap
-                    profil.
+                    Nama tidak membedakan huruf besar-kecil.
                   </p>
-                  {demoUsers.map((demo) => {
-                    const Icon = demo.icon;
-                    return (
-                      <button
-                        key={demo.email}
-                        onClick={() => handleDemoLogin(demo)}
-                        disabled={loading}
-                        className="w-full flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent transition-colors text-left disabled:opacity-50"
-                      >
-                        {loading && (
-                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                        )}
-                        <div className="p-2 rounded-md bg-primary/10">
-                          <Icon className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-medium">{demo.label}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {demo.description}
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
                   {error && <p className="text-sm text-red-500">{error}</p>}
-                </div>
+
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Masuk sebagai Siswa
+                  </Button>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="staff">
+                <form onSubmit={handleStaffLogin} className="space-y-4 mt-4">
+                  <div>
+                    <Label htmlFor="staff-email">Email</Label>
+                    <Input
+                      id="staff-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      placeholder="email@sekolah.sch.id"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="staff-password">Password</Label>
+                    <Input
+                      id="staff-password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      placeholder="Masukkan password"
+                    />
+                  </div>
+
+                  {error && <p className="text-sm text-red-500">{error}</p>}
+
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Masuk sebagai Moderator/Guru
+                  </Button>
+                </form>
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
 
-        <div className="rounded-xl bg-white/5 border border-white/10 px-6 py-5">
+        <div className="rounded-xl bg-white/80 border border-slate-200 px-3 py-4 shadow-xs backdrop-blur-sm">
           <p className="text-center text-xs text-slate-500 mb-4 uppercase tracking-wider">
             Didukung oleh
           </p>
-          <div className="flex items-center justify-center gap-6 flex-wrap">
+          <div className="flex items-center justify-center gap-3 flex-nowrap">
             <Image
               src="/images/kemdikbud.webp"
               alt="Kementerian Pendidikan, Kebudayaan, Riset, dan Teknologi"
               width={120}
               height={44}
-              className="h-11 w-auto object-contain"
-              style={{ width: "auto" }}
+              style={{ height: "36px", width: "auto" }}
               unoptimized
             />
             <Image
-              src="/images/unbaja.webp"
-              alt="Universitas Banten Jaya"
+              src="/images/diktisaintek.webp"
+              alt="DIKTISAINTEK"
               width={120}
               height={44}
-              className="h-11 w-auto object-contain"
-              style={{ width: "auto" }}
+              style={{ height: "36px", width: "auto" }}
+              unoptimized
+            />
+            <Image
+              src="/images/bima.webp"
+              alt="BIMA"
+              width={120}
+              height={44}
+              style={{ height: "36px", width: "auto" }}
               unoptimized
             />
             <Image
@@ -339,8 +226,23 @@ export default function LoginPage() {
               alt="Universitas Bina Bangsa"
               width={120}
               height={44}
-              className="h-11 w-auto object-contain"
-              style={{ width: "auto" }}
+              style={{ height: "36px", width: "auto" }}
+              unoptimized
+            />
+            <Image
+              src="/images/unbaja.webp"
+              alt="Universitas Banten Jaya"
+              width={120}
+              height={44}
+              style={{ height: "36px", width: "auto" }}
+              unoptimized
+            />
+            <Image
+              src="/images/smk.webp"
+              alt="SMK PGRI 3"
+              width={120}
+              height={44}
+              style={{ height: "36px", width: "auto" }}
               unoptimized
             />
           </div>

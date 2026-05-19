@@ -19,6 +19,7 @@ import type {
   PuzzleBase,
   Task,
 } from "@/types/puzzle";
+import { sounds } from "@/lib/sounds";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DroppableCategory } from "./DroppableCategory";
@@ -65,6 +66,7 @@ export function DecompositionSortPuzzle({
   );
 
   const handleDragStart = (event: DragStartEvent) => {
+    sounds.pick();
     setSelectedTaskId(null);
     const task = event.active.data.current?.task as Task | undefined;
     if (task) setActiveTask(task);
@@ -76,6 +78,7 @@ export function DecompositionSortPuzzle({
     const { active, over } = event;
     if (!over) return;
 
+    sounds.place();
     const taskId = active.id as string;
     const overId = over.id as string;
 
@@ -92,11 +95,13 @@ export function DecompositionSortPuzzle({
 
   // Tap-to-select: tap a task to pick it up, tap a category to place it
   const handleTaskTap = (taskId: string) => {
+    sounds.pick();
     setSelectedTaskId((prev) => (prev === taskId ? null : taskId));
   };
 
   const handleCategoryTap = (categoryId: string) => {
     if (!selectedTaskId || isSubmitting) return;
+    sounds.place();
     setTaskLocations((prev) => ({ ...prev, [selectedTaskId]: categoryId }));
     setSelectedTaskId(null);
   };
@@ -120,8 +125,9 @@ export function DecompositionSortPuzzle({
     );
 
     if (misplaced.length === 0) {
-      toast.success("Semua task sudah di posisi yang benar!", {
-        description: "Kamu bisa submit sekarang.",
+      sounds.hint();
+      toast.success("Semua tugas sudah di posisi yang benar!", {
+        description: "Kamu bisa kirim sekarang.",
       });
       return;
     }
@@ -136,6 +142,7 @@ export function DecompositionSortPuzzle({
       (c) => c.id === correctCategoryId,
     );
 
+    sounds.hint();
     toast.info(`"${pick.label}"`, {
       description: `Masuk ke kategori → ${correctCategory?.label ?? correctCategoryId}`,
       duration: 5000,
@@ -145,6 +152,7 @@ export function DecompositionSortPuzzle({
   };
 
   const handleSubmit = () => {
+    sounds.submit();
     const mapping: Record<string, string> = {};
     for (const [taskId, location] of Object.entries(taskLocations)) {
       if (location !== POOL_ID) mapping[taskId] = location;
@@ -171,13 +179,13 @@ export function DecompositionSortPuzzle({
         {/* Task pool */}
         <Card className="p-4">
           <div className="mb-3 flex items-center gap-2 text-sm font-medium">
-            <span>Task yang Tersedia</span>
+            <span>Tugas yang Tersedia</span>
             <span className="ml-auto text-xs text-muted-foreground">
               {getTasksAt(POOL_ID).length} sisa
             </span>
           </div>
           <DroppableCategory
-            category={{ id: POOL_ID, label: "Pool Task", color: "blue" }}
+            category={{ id: POOL_ID, label: "Daftar Tugas", color: "blue" }}
             tasks={getTasksAt(POOL_ID)}
             isDisabled={isSubmitting}
             selectedTaskId={selectedTaskId}
@@ -263,12 +271,12 @@ export function DecompositionSortPuzzle({
               size="lg"
             >
               <Send className="mr-2 h-4 w-4" />
-              {isSubmitting ? "Memeriksa..." : "Submit Jawaban"}
+              {isSubmitting ? "Memeriksa..." : "Kirim Jawaban"}
             </Button>
           </div>
           {!allTasksPlaced && (
             <p className="mt-2 text-center text-xs text-muted-foreground">
-              Tempatkan semua task ke kategori dulu untuk submit
+              Tempatkan semua tugas ke kategori dulu untuk dikirim
             </p>
           )}
         </Card>

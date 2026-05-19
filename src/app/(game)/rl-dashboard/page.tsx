@@ -45,6 +45,7 @@ export default async function RLDashboardPage() {
         user={{
           id: user.id,
           email: user.email,
+          display_name: profile?.display_name,
           username: profile?.username,
           avatar_seed: profile?.avatar_seed,
           role: profile?.role,

@@ -43,7 +43,7 @@ export function TruthTableCell({
         isHighlighted && "ring-2 ring-primary ring-offset-2",
       )}
     >
-      {value === null ? "?" : value ? "T" : "F"}
+      {value === null ? "?" : value ? "B" : "S"}
     </motion.button>
   );
 }

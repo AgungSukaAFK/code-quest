@@ -20,7 +20,6 @@ const MODULES = [
   },
 ];
 
-
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -31,10 +30,10 @@ export default function LandingPage() {
             src="/images/codequest.webp"
             alt="CodeQuest"
             width={200}
-            height={52}
-            className="h-12 w-auto"
-            style={{ width: "auto" }}
+            height={48}
+            style={{ height: "48px", width: "auto" }}
             unoptimized
+            loading="eager"
           />
           <Link href="/login">
             <Button variant="outline" size="sm">
@@ -164,8 +163,9 @@ export default function LandingPage() {
               </div>
               <h4 className="font-semibold mb-2">Tantang Sesama</h4>
               <p className="text-sm text-muted-foreground">
-                Selesaikan semua quiz untuk membuka mode <span className="font-medium text-foreground">Multiplayer</span> — adu
-                kemampuan langsung dengan pemain lain.
+                Selesaikan semua quiz untuk membuka mode{" "}
+                <span className="font-medium text-foreground">Multiplayer</span>{" "}
+                — adu kemampuan langsung dengan pemain lain.
               </p>
             </div>
           </div>
@@ -270,27 +270,48 @@ export default function LandingPage() {
               src="/images/kemdikbud.webp"
               alt="Kementerian Pendidikan, Kebudayaan, Riset, dan Teknologi"
               width={180}
-              height={64}
-              className="h-14 sm:h-16 w-auto object-contain"
-              style={{ width: "auto" }}
+              height={56}
+              style={{ height: "56px", width: "auto" }}
               unoptimized
             />
             <Image
-              src="/images/unbaja.webp"
-              alt="Universitas Banten Jaya"
+              src="/images/diktisaintek.webp"
+              alt="DIKTISAINTEK"
               width={180}
-              height={64}
-              className="h-14 sm:h-16 w-auto object-contain"
-              style={{ width: "auto" }}
+              height={56}
+              style={{ height: "56px", width: "auto" }}
+              unoptimized
+            />
+            <Image
+              src="/images/bima.webp"
+              alt="BIMA"
+              width={180}
+              height={56}
+              style={{ height: "56px", width: "auto" }}
               unoptimized
             />
             <Image
               src="/images/uniba.webp"
               alt="Universitas Bina Bangsa"
               width={180}
-              height={64}
-              className="h-14 sm:h-16 w-auto object-contain"
-              style={{ width: "auto" }}
+              height={56}
+              style={{ height: "56px", width: "auto" }}
+              unoptimized
+            />
+            <Image
+              src="/images/unbaja.webp"
+              alt="Universitas Banten Jaya"
+              width={180}
+              height={56}
+              style={{ height: "56px", width: "auto" }}
+              unoptimized
+            />
+            <Image
+              src="/images/smk.webp"
+              alt="SMK PGRI 3"
+              width={180}
+              height={56}
+              style={{ height: "56px", width: "auto" }}
               unoptimized
             />
           </div>

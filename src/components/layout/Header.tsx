@@ -5,7 +5,15 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BookOpen, BrainCircuit, LogOut, Map, Settings2, Trophy, User as UserIcon } from "lucide-react";
+import {
+  BookOpen,
+  BrainCircuit,
+  LogOut,
+  Map,
+  Settings2,
+  Trophy,
+  User as UserIcon,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +26,7 @@ interface HeaderProps {
   user: {
     id: string;
     email?: string;
+    display_name?: string | null;
     username?: string | null;
     avatar_seed?: string | null;
     role?: string | null;
@@ -37,6 +46,8 @@ export function Header({ user }: HeaderProps) {
   const avatarUrl = user?.avatar_seed
     ? `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(user.avatar_seed)}`
     : undefined;
+  const userDisplayName = user?.display_name || user?.username || "User";
+  const userInitial = userDisplayName[0]?.toUpperCase() ?? "U";
 
   return (
     <header className="border-b bg-card">
@@ -47,10 +58,10 @@ export function Header({ user }: HeaderProps) {
               src="/images/codequest.webp"
               alt="CodeQuest"
               width={180}
-              height={44}
-              className="h-10 w-auto"
-              style={{ width: "auto" }}
+              height={40}
+              style={{ height: "40px", width: "auto" }}
               unoptimized
+              loading="eager"
             />
           </Link>
         </div>
@@ -59,97 +70,140 @@ export function Header({ user }: HeaderProps) {
           <Image
             src="/images/kemdikbud.webp"
             alt="Kemdikbud"
-            width={80}
+            width={100}
             height={28}
-            className="h-7 w-auto object-contain opacity-80"
-            style={{ width: "auto" }}
+            className="opacity-80"
+            style={{ height: "28px", width: "auto" }}
             unoptimized
           />
           <span className="text-border">|</span>
           <Image
-            src="/images/unbaja.webp"
-            alt="Universitas Banten Jaya"
-            width={80}
+            src="/images/diktisaintek.webp"
+            alt="DIKTISAINTEK"
+            width={100}
             height={28}
-            className="h-7 w-auto object-contain opacity-80"
-            style={{ width: "auto" }}
+            className="opacity-80"
+            style={{ height: "28px", width: "auto" }}
+            unoptimized
+          />
+          <span className="text-border">|</span>
+          <Image
+            src="/images/bima.webp"
+            alt="BIMA"
+            width={100}
+            height={28}
+            className="opacity-80"
+            style={{ height: "28px", width: "auto" }}
             unoptimized
           />
           <span className="text-border">|</span>
           <Image
             src="/images/uniba.webp"
             alt="Universitas Bina Bangsa"
-            width={80}
+            width={100}
             height={28}
-            className="h-7 w-auto object-contain opacity-80"
-            style={{ width: "auto" }}
+            className="opacity-80"
+            style={{ height: "28px", width: "auto" }}
+            unoptimized
+          />
+          <span className="text-border">|</span>
+          <Image
+            src="/images/unbaja.webp"
+            alt="Universitas Banten Jaya"
+            width={100}
+            height={28}
+            className="opacity-80"
+            style={{ height: "28px", width: "auto" }}
+            unoptimized
+          />
+          <span className="text-border">|</span>
+          <Image
+            src="/images/smk.webp"
+            alt="SMK PGRI 3"
+            width={100}
+            height={28}
+            className="opacity-80"
+            style={{ height: "28px", width: "auto" }}
             unoptimized
           />
         </div>
 
         <div className="flex-1 flex justify-end">
-        {user && (
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-muted transition-colors outline-none">
-              <Avatar className="h-7 w-7">
-                <AvatarImage src={avatarUrl} />
-                <AvatarFallback>
-                  {user.username?.[0]?.toUpperCase() ?? "U"}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-sm font-medium hidden sm:inline">
-                {user.username ?? "User"}
-              </span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuItem className="py-2.5" onClick={() => router.push("/world-map")}>
-                <Map className="mr-2 h-4 w-4" />
-                Peta Dunia
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="py-2.5"
-                onClick={() =>
-                  window.open(
-                    "/files/Modul Hibah Penelitian.pdf",
-                    "_blank",
-                    "noopener,noreferrer",
-                  )
-                }
-              >
-                <BookOpen className="mr-2 h-4 w-4" />
-                Modul Pembelajaran
-              </DropdownMenuItem>
-              <DropdownMenuItem className="py-2.5" onClick={() => router.push("/leaderboard")}>
-                <Trophy className="mr-2 h-4 w-4" />
-                Leaderboard
-              </DropdownMenuItem>
-              {user?.role === "moderator" && (
-                <DropdownMenuItem className="py-2.5" onClick={() => router.push("/rl-dashboard")}>
-                  <BrainCircuit className="mr-2 h-4 w-4" />
-                  RL Dashboard
+          {user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-muted transition-colors outline-none">
+                <Avatar className="h-7 w-7">
+                  <AvatarImage src={avatarUrl} />
+                  <AvatarFallback>{userInitial}</AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium hidden sm:inline">
+                  {userDisplayName}
+                </span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem
+                  className="py-2.5"
+                  onClick={() => router.push("/world-map")}
+                >
+                  <Map className="mr-2 h-4 w-4" />
+                  Peta Dunia
                 </DropdownMenuItem>
-              )}
-              <DropdownMenuItem className="py-2.5" onClick={() => router.push("/profile")}>
-                <UserIcon className="mr-2 h-4 w-4" />
-                Profil
-              </DropdownMenuItem>
-              {user?.role === "moderator" && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="py-2.5" onClick={() => router.push("/moderator/users")}>
-                    <Settings2 className="mr-2 h-4 w-4" />
-                    Manajemen Pengguna
+                <DropdownMenuItem
+                  className="py-2.5"
+                  onClick={() =>
+                    window.open(
+                      "/files/Modul Hibah Penelitian.pdf",
+                      "_blank",
+                      "noopener,noreferrer",
+                    )
+                  }
+                >
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Modul Pembelajaran
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="py-2.5"
+                  onClick={() => router.push("/leaderboard")}
+                >
+                  <Trophy className="mr-2 h-4 w-4" />
+                  Leaderboard
+                </DropdownMenuItem>
+                {user?.role === "moderator" && (
+                  <DropdownMenuItem
+                    className="py-2.5"
+                    onClick={() => router.push("/rl-dashboard")}
+                  >
+                    <BrainCircuit className="mr-2 h-4 w-4" />
+                    RL Dashboard
                   </DropdownMenuItem>
-                </>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="py-2.5" onClick={handleSignOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Keluar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+                )}
+                <DropdownMenuItem
+                  className="py-2.5"
+                  onClick={() => router.push("/profile")}
+                >
+                  <UserIcon className="mr-2 h-4 w-4" />
+                  Profil
+                </DropdownMenuItem>
+                {user?.role === "moderator" && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="py-2.5"
+                      onClick={() => router.push("/moderator/users")}
+                    >
+                      <Settings2 className="mr-2 h-4 w-4" />
+                      Manajemen Sistem
+                    </DropdownMenuItem>
+                  </>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="py-2.5" onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Keluar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
     </header>

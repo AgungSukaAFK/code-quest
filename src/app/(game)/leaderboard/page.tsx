@@ -10,7 +10,7 @@ export interface LeaderboardEntry {
   displayName: string | null;
   avatarSeed: string | null;
   className: string | null;
-  score: number;        // 0–100 (avg skill_level × 100, rounded)
+  score: number; // 0–100 (avg skill_level × 100, rounded)
   totalCorrect: number;
   modulesPlayed: number;
   rank: number;
@@ -26,7 +26,7 @@ export default async function LeaderboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username, avatar_seed, role")
+    .select("username, display_name, avatar_seed, role, class_name")
     .eq("id", user.id)
     .single();
 
@@ -37,15 +37,16 @@ export default async function LeaderboardPage() {
       admin
         .from("profiles")
         .select("id, username, display_name, avatar_seed, class_name"),
-      admin
-        .from("student_skills")
-        .select("user_id, module_id, skill_level"),
-      admin
-        .from("sessions")
-        .select("user_id, total_correct"),
+      admin.from("student_skills").select("user_id, module_id, skill_level"),
+      admin.from("sessions").select("user_id, total_correct"),
     ]);
 
-  const entries: LeaderboardEntry[] = (profiles ?? [])
+  const visibleProfiles =
+    profile?.role === "siswa"
+      ? (profiles ?? []).filter((p) => p.class_name === profile.class_name)
+      : (profiles ?? []);
+
+  const entries: LeaderboardEntry[] = visibleProfiles
     .map((p) => {
       const userSkills = (skills ?? []).filter((s) => s.user_id === p.id);
       const userSessions = (sessions ?? []).filter((s) => s.user_id === p.id);
@@ -82,12 +83,18 @@ export default async function LeaderboardPage() {
         user={{
           id: user.id,
           email: user.email,
+          display_name: profile?.display_name,
           username: profile?.username,
           avatar_seed: profile?.avatar_seed,
           role: profile?.role,
         }}
       />
-      <LeaderboardClient entries={entries} currentUserId={user.id} />
+      <LeaderboardClient
+        entries={entries}
+        currentUserId={user.id}
+        viewerRole={profile?.role ?? null}
+        viewerClassName={profile?.class_name ?? null}
+      />
     </div>
   );
 }

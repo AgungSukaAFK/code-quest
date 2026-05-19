@@ -3,12 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, BrainCircuit, Loader2 } from "lucide-react";
+import { ArrowLeft, BookOpen, BrainCircuit, Loader2, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { DecompositionSortPuzzle } from "@/components/puzzle/decomposition/DecompositionSortPuzzle";
 import { BooleanPuzzle } from "@/components/puzzle/boolean/BooleanPuzzle";
 import { PuzzleResultModal } from "@/components/puzzle/PuzzleResultModal";
+import { InstructionModal } from "@/components/puzzle/InstructionModal";
 import { RLInsightPanel } from "@/components/rl/RLInsightPanel";
+import { sounds } from "@/lib/sounds";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -38,9 +40,11 @@ interface PlayClientProps {
   sessionId: string;
   avatarSeed: string | null;
   username: string | null;
+  role: string | null;
 }
 
-export function PlayClient({ module, sessionId, avatarSeed, username }: PlayClientProps) {
+export function PlayClient({ module, sessionId, avatarSeed, username, role }: PlayClientProps) {
+  const isModerator = role === "moderator";
   const router = useRouter();
 
   const [currentPuzzle, setCurrentPuzzle] = useState<PuzzleBase | null>(null);
@@ -50,11 +54,19 @@ export function PlayClient({ module, sessionId, avatarSeed, username }: PlayClie
   const [result, setResult] = useState<PuzzleResult | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [puzzleRenderKey, setPuzzleRenderKey] = useState(0);
-  const [showRLInsight, setShowRLInsight] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [muted, setMuted] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("cq_sound_muted") === "1";
+  });
 
+  // Sync initial muted state to sounds module
+  useEffect(() => {
+    sounds.muted = muted;
+  }, []);
+
+  const [showRLInsight, setShowRLInsight] = useState(() => {
+    if (!isModerator || typeof window === "undefined") return false;
     const params = new URLSearchParams(window.location.search);
     const demoEnabled = params.get("demo");
     return demoEnabled === "1" || demoEnabled === "true";
@@ -81,16 +93,24 @@ export function PlayClient({ module, sessionId, avatarSeed, username }: PlayClie
   }, []);
 
   useEffect(() => {
+    if (!currentPuzzle) return;
+    const key = `cq_instructions_seen_${currentPuzzle.type}`;
+    if (!localStorage.getItem(key)) {
+      setShowInstructions(true);
+    }
+  }, [currentPuzzle?.type]);
+
+  useEffect(() => {
+    if (!isModerator) return;
     const handleShortcut = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "d") {
         event.preventDefault();
         setShowRLInsight((current) => !current);
       }
     };
-
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
-  }, []);
+  }, [isModerator]);
 
   async function loadNextPuzzle() {
     setLoading(true);
@@ -209,6 +229,20 @@ export function PlayClient({ module, sessionId, avatarSeed, username }: PlayClie
     setPuzzleRenderKey((key) => key + 1);
   };
 
+  const toggleMute = () => {
+    const next = !muted;
+    sounds.muted = next;
+    setMuted(next);
+    localStorage.setItem("cq_sound_muted", next ? "1" : "0");
+  };
+
+  const handleCloseInstructions = () => {
+    if (currentPuzzle) {
+      localStorage.setItem(`cq_instructions_seen_${currentPuzzle.type}`, "1");
+    }
+    setShowInstructions(false);
+  };
+
   if (loading) {
     return (
       <main className="container mx-auto min-h-100 max-w-7xl px-4 py-8">
@@ -258,24 +292,46 @@ export function PlayClient({ module, sessionId, avatarSeed, username }: PlayClie
           </span>
           <button
             type="button"
-            onClick={() => setShowRLInsight((current) => !current)}
-            className={cn(
-              buttonVariants({
-                variant: showRLInsight ? "default" : "outline",
-                size: "sm",
-              }),
-            )}
+            onClick={toggleMute}
+            aria-label={muted ? "Aktifkan suara" : "Matikan suara"}
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
           >
-            <BrainCircuit className="mr-2 h-4 w-4" />
-            {showRLInsight ? "Sembunyikan RL" : "Tampilkan RL"}
+            {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           </button>
+          {currentPuzzle && (
+            <button
+              type="button"
+              onClick={() => setShowInstructions(true)}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+            >
+              <BookOpen className="mr-2 h-4 w-4" />
+              Petunjuk
+            </button>
+          )}
+          {isModerator && (
+            <button
+              type="button"
+              onClick={() => setShowRLInsight((current) => !current)}
+              className={cn(
+                buttonVariants({
+                  variant: showRLInsight ? "default" : "outline",
+                  size: "sm",
+                }),
+              )}
+            >
+              <BrainCircuit className="mr-2 h-4 w-4" />
+              {showRLInsight ? "Sembunyikan RL" : "Tampilkan RL"}
+            </button>
+          )}
         </div>
       </div>
 
       <div
         className={cn(
           "grid gap-4",
-          showRLInsight ? "lg:grid-cols-[minmax(0,1fr)_320px]" : "",
+          showRLInsight
+            ? "lg:grid-cols-[minmax(0,1fr)_320px]"
+            : "mx-auto w-full max-w-2xl",
         )}
       >
         <div className="space-y-4">
@@ -337,6 +393,16 @@ export function PlayClient({ module, sessionId, avatarSeed, username }: PlayClie
         avatarSeed={avatarSeed}
         username={username}
       />
+
+      {currentPuzzle && (
+        <InstructionModal
+          open={showInstructions}
+          onClose={handleCloseInstructions}
+          puzzleType={
+            currentPuzzle.type as "decomposition_sort" | "truth_table"
+          }
+        />
+      )}
     </main>
   );
 }

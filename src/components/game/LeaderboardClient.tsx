@@ -11,6 +11,8 @@ import type { LeaderboardEntry } from "@/app/(game)/leaderboard/page";
 interface LeaderboardClientProps {
   entries: LeaderboardEntry[];
   currentUserId: string;
+  viewerRole: string | null;
+  viewerClassName: string | null;
 }
 
 const MEDALS = ["🥇", "🥈", "🥉"];
@@ -34,8 +36,11 @@ function avatarUrl(seed: string) {
 export function LeaderboardClient({
   entries,
   currentUserId,
+  viewerRole,
+  viewerClassName,
 }: LeaderboardClientProps) {
   const [classFilter, setClassFilter] = useState<string>("__all__");
+  const isStudentView = viewerRole === "siswa";
 
   const classes = useMemo(() => {
     const set = new Set<string>();
@@ -46,25 +51,31 @@ export function LeaderboardClient({
   }, [entries]);
 
   const filtered = useMemo(() => {
+    if (isStudentView) return entries;
     if (classFilter === "__all__") return entries;
     return entries
       .filter((e) => e.className === classFilter)
       .map((e, i) => ({ ...e, rank: i + 1 }));
-  }, [entries, classFilter]);
+  }, [entries, classFilter, isStudentView]);
 
   return (
     <main className="container mx-auto max-w-2xl px-4 py-8 space-y-6">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
-          🏆 Leaderboard
+          🏆{" "}
+          {isStudentView && viewerClassName
+            ? `Leaderboard ${viewerClassName}`
+            : "Leaderboard"}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Ranking berdasarkan rata-rata skill level semua modul
+          {isStudentView
+            ? `Ranking berdasarkan rata-rata skill level untuk ${viewerClassName ?? "kelas kamu"}`
+            : "Ranking berdasarkan rata-rata skill level semua modul"}
         </p>
       </div>
 
       {/* Class filter */}
-      {classes.length > 0 && (
+      {!isStudentView && classes.length > 0 && (
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -119,9 +130,7 @@ export function LeaderboardClient({
                 className={cn(
                   "transition-shadow",
                   isMedal && medalStyle[entry.rank],
-                  isCurrentUser &&
-                    !isMedal &&
-                    "border-primary/40 bg-primary/5",
+                  isCurrentUser && !isMedal && "border-primary/40 bg-primary/5",
                 )}
               >
                 <CardContent className="py-3 px-4">
@@ -193,7 +202,7 @@ export function LeaderboardClient({
                     </div>
 
                     {/* Score */}
-                    <div className="shrink-0 text-right min-w-[72px]">
+                    <div className="shrink-0 text-right min-w-18">
                       <p className="text-lg font-bold leading-none">
                         {entry.score}
                         <span className="text-xs font-normal text-muted-foreground">
@@ -226,7 +235,13 @@ export function LeaderboardClient({
       {filtered.length > 0 && (
         <p className="text-center text-xs text-muted-foreground pb-4">
           {filtered.length} siswa terdaftar
-          {classFilter !== "__all__" ? ` di kelas ${classFilter}` : ""}
+          {isStudentView
+            ? viewerClassName
+              ? ` di ${viewerClassName}`
+              : ""
+            : classFilter !== "__all__"
+              ? ` di kelas ${classFilter}`
+              : ""}
         </p>
       )}
     </main>

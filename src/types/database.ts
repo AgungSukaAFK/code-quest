@@ -4,6 +4,7 @@ export interface Database {
       profiles: {
         Row: {
           id: string;
+          nisn: string | null;
           username: string | null;
           display_name: string | null;
           avatar_seed: string | null;
@@ -12,6 +13,7 @@ export interface Database {
         };
         Insert: {
           id: string;
+          nisn?: string | null;
           username?: string | null;
           display_name?: string | null;
           avatar_seed?: string | null;
@@ -20,6 +22,7 @@ export interface Database {
         };
         Update: {
           id?: string;
+          nisn?: string | null;
           username?: string | null;
           display_name?: string | null;
           avatar_seed?: string | null;

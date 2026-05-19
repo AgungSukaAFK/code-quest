@@ -47,6 +47,7 @@ export default async function PlayPage({ params }: PlayPageProps) {
         user={{
           id: user.id,
           email: user.email,
+          display_name: profile?.display_name,
           username: profile?.username,
           avatar_seed: profile?.avatar_seed,
           role: profile?.role,
@@ -62,6 +63,7 @@ export default async function PlayPage({ params }: PlayPageProps) {
         sessionId={session.id}
         avatarSeed={profile?.avatar_seed ?? null}
         username={profile?.username ?? null}
+        role={profile?.role ?? null}
       />
     </div>
   );
