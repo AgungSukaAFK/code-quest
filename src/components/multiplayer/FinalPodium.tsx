@@ -1,17 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Trophy, Map, RotateCcw } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Trophy, Map as MapIcon, RotateCcw } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { RoomPlayer } from "@/types/multiplayer";
+import type { RoomAnswer, RoomPlayer } from "@/types/multiplayer";
 
 interface Props {
   players: RoomPlayer[];
   currentPlayerId: string;
   roomCode: string;
+  allAnswers: RoomAnswer[];
+  totalQuestions: number;
 }
 
 const MEDAL = ["🥇", "🥈", "🥉"];
@@ -21,6 +22,17 @@ const PODIUM_COLORS = [
   "from-slate-400 to-slate-500",
   "from-amber-700 to-amber-800",
 ];
+
+function getLabel(correct: number, total: number) {
+  if (total === 0) return { text: "Terus Semangat! 💪", color: "text-purple-400" };
+  const pct = correct / total;
+  if (pct === 1)   return { text: "SEMPURNA! 🔥",       color: "text-amber-400 font-bold" };
+  if (pct >= 0.8)  return { text: "Luar Biasa! ⭐",     color: "text-emerald-400" };
+  if (pct >= 0.6)  return { text: "Bagus! 👍",           color: "text-blue-400" };
+  if (pct >= 0.4)  return { text: "Lumayan 😊",          color: "text-purple-400" };
+  if (pct >= 0.2)  return { text: "Terus Semangat! 💪", color: "text-rose-400" };
+  return                   { text: "Jangan Menyerah! 📚", color: "text-rose-300" };
+}
 
 function Confetti() {
   const pieces = Array.from({ length: 30 }, (_, i) => ({
@@ -46,14 +58,20 @@ function Confetti() {
   );
 }
 
-export function FinalPodium({ players, currentPlayerId, roomCode }: Props) {
+export function FinalPodium({ players, currentPlayerId, roomCode, allAnswers, totalQuestions }: Props) {
+  // Correct count per player
+  const correctMap = new Map<string, number>();
+  for (const a of allAnswers) {
+    if (a.is_correct) correctMap.set(a.player_id, (correctMap.get(a.player_id) ?? 0) + 1);
+  }
+
   const top3 = players.slice(0, 3);
-  // Reorder for visual podium: 2nd, 1st, 3rd
   const podiumOrder = [top3[1], top3[0], top3[2]].filter(Boolean);
-  const podiumVisualIndex = [1, 0, 2]; // maps visual position to rank
+  const podiumVisualIndex = [1, 0, 2];
 
   const myRank = players.findIndex((p) => p.id === currentPlayerId) + 1;
-  const myScore = players.find((p) => p.id === currentPlayerId)?.score ?? 0;
+  const myCorrect = correctMap.get(currentPlayerId) ?? 0;
+  const myLabel = getLabel(myCorrect, totalQuestions);
 
   return (
     <>
@@ -62,40 +80,64 @@ export function FinalPodium({ players, currentPlayerId, roomCode }: Props) {
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="mb-2 flex items-center gap-2 text-amber-400"
+          className="mb-1 flex items-center gap-2 text-amber-400"
         >
           <Trophy className="h-8 w-8" />
           <h1 className="text-2xl font-bold text-white sm:text-3xl">Pertandingan Selesai!</h1>
           <Trophy className="h-8 w-8" />
         </motion.div>
 
-        <p className="mb-8 text-purple-300">
-          Kamu berada di posisi ke-{myRank} dengan {myScore.toLocaleString()} poin
-        </p>
+        {/* Personal result summary */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-6 flex flex-col items-center gap-1"
+        >
+          <p className={cn("text-lg font-semibold", myLabel.color)}>{myLabel.text}</p>
+          <p className="text-purple-300 text-sm">
+            Posisi ke-<span className="font-bold text-white">{myRank}</span>
+            {" · "}
+            <span className="font-bold text-white">{myCorrect}</span>
+            <span className="text-purple-300"> dari {totalQuestions} soal benar</span>
+          </p>
+        </motion.div>
 
         {/* Podium visual */}
         {top3.length > 0 && (
-          <div className="mb-8 flex w-full items-end justify-center gap-2">
+          <div className="mb-6 flex w-full items-end justify-center gap-2">
             {podiumOrder.map((player, visualIdx) => {
               const rank = podiumVisualIndex[visualIdx];
               if (!player) return null;
+              const correct = correctMap.get(player.id) ?? 0;
+              const isMe = player.id === currentPlayerId;
               return (
                 <motion.div
                   key={player.id}
                   initial={{ opacity: 0, y: 40 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: visualIdx * 0.15 + 0.3 }}
-                  className="flex flex-1 flex-col items-center gap-2"
+                  className="flex flex-1 flex-col items-center gap-1"
                 >
                   <div className="text-2xl">{MEDAL[rank]}</div>
-                  <div className={cn("flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white", rank === 0 ? "bg-amber-500" : rank === 1 ? "bg-slate-400" : "bg-amber-700")}>
+                  <div className={cn(
+                    "flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white ring-2",
+                    isMe ? "ring-amber-400" : "ring-white/20",
+                    rank === 0 ? "bg-amber-500" : rank === 1 ? "bg-slate-400" : "bg-amber-700",
+                  )}>
                     {player.display_name[0].toUpperCase()}
                   </div>
-                  <p className={cn("text-center text-xs font-semibold", player.id === currentPlayerId ? "text-amber-300" : "text-white")}>
+                  <p className={cn("text-center text-xs font-semibold truncate max-w-[70px]", isMe ? "text-amber-300" : "text-white")}>
                     {player.display_name}
+                    {isMe && <span className="block text-[10px] text-purple-400">(kamu)</span>}
                   </p>
-                  <div className={cn("w-full rounded-t-xl bg-linear-to-b flex items-center justify-center text-white font-bold text-sm", PODIUM_HEIGHTS[rank], PODIUM_COLORS[rank])}>
-                    {player.score.toLocaleString()}
+                  {/* Podium block shows "benar" count, score is secondary */}
+                  <div className={cn(
+                    "w-full rounded-t-xl bg-linear-to-b flex flex-col items-center justify-center gap-0.5 px-1",
+                    PODIUM_HEIGHTS[rank], PODIUM_COLORS[rank],
+                  )}>
+                    <span className="text-white font-bold text-sm">{correct}/{totalQuestions}</span>
+                    <span className="text-white/70 text-[10px]">benar</span>
                   </div>
                 </motion.div>
               );
@@ -110,24 +152,53 @@ export function FinalPodium({ players, currentPlayerId, roomCode }: Props) {
           transition={{ delay: 0.7 }}
           className="w-full rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm"
         >
-          <p className="mb-3 text-xs font-medium uppercase tracking-widest text-purple-400">Skor Lengkap</p>
+          <p className="mb-3 text-xs font-medium uppercase tracking-widest text-purple-400">Hasil Lengkap</p>
           <div className="space-y-2">
-            {players.map((player, idx) => (
-              <div
-                key={player.id}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl px-3 py-2 text-sm",
-                  player.id === currentPlayerId ? "bg-purple-500/20 ring-1 ring-purple-500/40" : "bg-white/5",
-                )}
-              >
-                <span className="w-6 text-center font-bold text-purple-400">{idx + 1}</span>
-                <span className="flex-1 font-medium text-white">
-                  {player.display_name}
-                  {player.id === currentPlayerId && <span className="ml-1 text-purple-400 text-xs">(kamu)</span>}
-                </span>
-                <span className="font-bold text-amber-400">{player.score.toLocaleString()}</span>
-              </div>
-            ))}
+            {players.map((player, idx) => {
+              const correct = correctMap.get(player.id) ?? 0;
+              const label = getLabel(correct, totalQuestions);
+              const isMe = player.id === currentPlayerId;
+              return (
+                <motion.div
+                  key={player.id}
+                  initial={{ opacity: 0, x: -16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.8 + idx * 0.06 }}
+                  className={cn(
+                    "flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm",
+                    isMe ? "bg-purple-500/20 ring-1 ring-purple-500/40" : "bg-white/5",
+                  )}
+                >
+                  {/* Rank */}
+                  <span className="w-5 shrink-0 text-center text-base">
+                    {idx < 3 ? MEDAL[idx] : <span className="text-xs font-bold text-purple-400">{idx + 1}</span>}
+                  </span>
+
+                  {/* Name */}
+                  <span className="flex-1 font-medium text-white truncate">
+                    {player.display_name}
+                    {isMe && <span className="ml-1 text-[11px] text-purple-400">(kamu)</span>}
+                  </span>
+
+                  {/* Correct count chip */}
+                  <span className={cn(
+                    "shrink-0 rounded-full px-2 py-0.5 text-xs font-bold",
+                    correct >= totalQuestions * 0.8
+                      ? "bg-emerald-500/20 text-emerald-400"
+                      : correct >= totalQuestions * 0.5
+                        ? "bg-blue-500/20 text-blue-400"
+                        : "bg-white/10 text-purple-300",
+                  )}>
+                    ✅ {correct}/{totalQuestions}
+                  </span>
+
+                  {/* Label */}
+                  <span className={cn("shrink-0 text-xs hidden sm:block", label.color)}>
+                    {label.text}
+                  </span>
+                </motion.div>
+              );
+            })}
           </div>
         </motion.div>
 
@@ -148,7 +219,7 @@ export function FinalPodium({ players, currentPlayerId, roomCode }: Props) {
             href="/world-map"
             className={cn(buttonVariants({ size: "lg" }), "flex-1 bg-purple-600 hover:bg-purple-500")}
           >
-            <Map className="mr-2 h-4 w-4" />
+            <MapIcon className="mr-2 h-4 w-4" />
             Kembali ke Peta
           </Link>
         </motion.div>

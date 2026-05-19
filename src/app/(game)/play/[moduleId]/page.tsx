@@ -30,16 +30,23 @@ export default async function PlayPage({ params }: PlayPageProps) {
 
   if (!module) notFound();
 
-  const { data: session } = await supabase
-    .from("sessions")
-    .insert({
-      user_id: user.id,
-      module_id: moduleId,
-    })
-    .select("id")
-    .single();
+  const [sessionResult, puzzlesResult] = await Promise.all([
+    supabase.from("sessions").insert({ user_id: user.id, module_id: moduleId }).select("id").single(),
+    supabase.from("puzzles").select("id").eq("module_id", moduleId),
+  ]);
 
-  if (!session) redirect("/world-map");
+  if (!sessionResult.data) redirect("/world-map");
+
+  const puzzleIds = (puzzlesResult.data ?? []).map((p) => p.id);
+  let initialUniqueCount = 0;
+  if (puzzleIds.length > 0) {
+    const { data: prevAttempts } = await supabase
+      .from("attempts")
+      .select("puzzle_id")
+      .eq("user_id", user.id)
+      .in("puzzle_id", puzzleIds);
+    initialUniqueCount = new Set((prevAttempts ?? []).map((a) => a.puzzle_id)).size;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -60,10 +67,11 @@ export default async function PlayPage({ params }: PlayPageProps) {
           name: module.name,
           description: module.description,
         }}
-        sessionId={session.id}
+        sessionId={sessionResult.data.id}
         avatarSeed={profile?.avatar_seed ?? null}
         username={profile?.username ?? null}
         role={profile?.role ?? null}
+        initialUniqueCount={initialUniqueCount}
       />
     </div>
   );

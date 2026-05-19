@@ -22,6 +22,8 @@ export function MultiplayerRoomClient({ initialRoom, initialPlayers, questions, 
   const [room, setRoom] = useState<MultiplayerRoom>(initialRoom);
   const [players, setPlayers] = useState<RoomPlayer[]>(initialPlayers);
   const [answers, setAnswers] = useState<RoomAnswer[]>([]);
+  // allAnswers accumulates across all questions (never reset) for stats
+  const [allAnswers, setAllAnswers] = useState<RoomAnswer[]>([]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -71,10 +73,11 @@ export function MultiplayerRoomClient({ initialRoom, initialPlayers, questions, 
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "room_answers", filter: `room_id=eq.${room.id}` },
-        ({ new: newAnswer }) =>
-          setAnswers((prev) =>
-            prev.find((a) => a.id === (newAnswer as RoomAnswer).id) ? prev : [...prev, newAnswer as RoomAnswer],
-          ),
+        ({ new: newAnswer }) => {
+          const a = newAnswer as RoomAnswer;
+          setAnswers((prev) => prev.find((x) => x.id === a.id) ? prev : [...prev, a]);
+          setAllAnswers((prev) => prev.find((x) => x.id === a.id) ? prev : [...prev, a]);
+        },
       )
       .subscribe();
 
@@ -111,6 +114,7 @@ export function MultiplayerRoomClient({ initialRoom, initialPlayers, questions, 
         question={currentQuestion}
         players={sortedPlayers}
         answers={answers}
+        allAnswers={allAnswers}
         myAnswer={myAnswer}
         currentPlayer={currentPlayer}
         isHost={isHost}
@@ -124,6 +128,8 @@ export function MultiplayerRoomClient({ initialRoom, initialPlayers, questions, 
       players={sortedPlayers}
       currentPlayerId={currentPlayer.id}
       roomCode={room.code}
+      allAnswers={allAnswers}
+      totalQuestions={questions.length}
     />
   );
 }

@@ -12,6 +12,7 @@ export interface LeaderboardEntry {
   className: string | null;
   score: number; // 0–100 (avg skill_level × 100, rounded)
   totalCorrect: number;
+  totalAttempts: number;
   modulesPlayed: number;
   rank: number;
 }
@@ -38,7 +39,7 @@ export default async function LeaderboardPage() {
         .from("profiles")
         .select("id, username, display_name, avatar_seed, class_name"),
       admin.from("student_skills").select("user_id, module_id, skill_level"),
-      admin.from("sessions").select("user_id, total_correct"),
+      admin.from("sessions").select("user_id, total_correct, total_attempts"),
     ]);
 
   const visibleProfiles =
@@ -57,10 +58,8 @@ export default async function LeaderboardPage() {
             userSkills.length
           : 0;
 
-      const totalCorrect = userSessions.reduce(
-        (sum, s) => sum + (s.total_correct ?? 0),
-        0,
-      );
+      const totalCorrect = userSessions.reduce((sum, s) => sum + (s.total_correct ?? 0), 0);
+      const totalAttempts = userSessions.reduce((sum, s) => sum + (s.total_attempts ?? 0), 0);
 
       return {
         userId: p.id,
@@ -70,6 +69,7 @@ export default async function LeaderboardPage() {
         className: p.class_name,
         score: Math.round(avgSkill * 100),
         totalCorrect,
+        totalAttempts,
         modulesPlayed: userSkills.length,
       };
     })

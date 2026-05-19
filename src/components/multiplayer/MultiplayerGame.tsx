@@ -12,6 +12,7 @@ interface Props {
   question: RoomQuestion;
   players: RoomPlayer[];
   answers: RoomAnswer[];
+  allAnswers: RoomAnswer[];
   myAnswer: RoomAnswer | null;
   currentPlayer: RoomPlayer;
   isHost: boolean;
@@ -105,6 +106,7 @@ export function MultiplayerGame({
   question,
   players,
   answers,
+  allAnswers,
   myAnswer,
   currentPlayer,
   isHost,
@@ -375,20 +377,36 @@ export function MultiplayerGame({
             )}
 
             <div className="mt-3 border-t border-white/10 pt-3">
-              <p className="mb-2 text-xs font-medium text-purple-300 uppercase tracking-wider">Papan Skor</p>
-              <div className="space-y-1">
-                {players.slice(0, 5).map((p, i) => (
-                  <div
-                    key={p.id}
-                    className={cn(
-                      "flex items-center justify-between text-sm",
-                      p.id === currentPlayer.id && "text-amber-300 font-semibold",
-                    )}
-                  >
-                    <span>{i + 1}. {p.display_name}{p.id === currentPlayer.id ? " (kamu)" : ""}</span>
-                    <span>{p.score.toLocaleString()}</span>
-                  </div>
-                ))}
+              <p className="mb-2 text-xs font-medium text-purple-300 uppercase tracking-wider">
+                Papan Skor — Soal {room.current_question_index + 1}/{totalQuestions}
+              </p>
+              <div className="space-y-1.5">
+                {players.slice(0, 5).map((p, i) => {
+                  const correctSoFar = allAnswers.filter(
+                    (a) => a.player_id === p.id && a.is_correct,
+                  ).length;
+                  const isMe = p.id === currentPlayer.id;
+                  return (
+                    <div
+                      key={p.id}
+                      className={cn(
+                        "flex items-center gap-2 rounded-lg px-2 py-1 text-sm",
+                        isMe ? "bg-white/10 text-amber-300 font-semibold" : "text-white",
+                      )}
+                    >
+                      <span className="w-4 shrink-0 text-xs text-purple-400">{i + 1}</span>
+                      <span className="flex-1 truncate">
+                        {p.display_name}{isMe ? " (kamu)" : ""}
+                      </span>
+                      <span className="shrink-0 rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-400 font-medium">
+                        ✅ {correctSoFar}
+                      </span>
+                      <span className="shrink-0 text-xs text-purple-300 tabular-nums">
+                        {p.score.toLocaleString()} poin
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

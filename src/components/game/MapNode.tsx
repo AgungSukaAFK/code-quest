@@ -16,6 +16,7 @@ interface MapNodeProps {
   node: MapNodeType;
   isSelected: boolean;
   isCurrent?: boolean;
+  isLocked?: boolean;
   onClick: () => void;
 }
 
@@ -23,10 +24,13 @@ export function MapNode({
   node,
   isSelected,
   isCurrent,
+  isLocked = false,
   onClick,
 }: MapNodeProps) {
   const Icon = iconMap[node.iconName];
-  const isLocked = node.type === "locked";
+  const typeIsLocked = node.type === "locked";
+  // typeIsLocked = completely disabled; isLocked = locked but still clickable (shows info)
+  const fullyLocked = typeIsLocked;
 
   return (
     <motion.button
@@ -34,11 +38,11 @@ export function MapNode({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.35 }}
       onClick={onClick}
-      disabled={isLocked}
+      disabled={fullyLocked}
       className={cn(
         "absolute -translate-x-1/2 -translate-y-1/2",
         "group flex flex-col items-center gap-2 transition-all duration-200",
-        isLocked && "cursor-not-allowed opacity-60",
+        fullyLocked && "cursor-not-allowed opacity-60",
       )}
       style={{
         left: `${node.position.x}%`,
@@ -58,22 +62,27 @@ export function MapNode({
         className={cn(
           "relative h-16 w-16 rounded-full border-4 sm:h-20 sm:w-20",
           "flex items-center justify-center transition-all duration-200 group-hover:scale-110",
-          isLocked
+          fullyLocked
             ? "bg-muted border-border"
-            : node.type === "computational_thinking"
-              ? "bg-linear-to-br from-indigo-500 to-purple-600 border-indigo-300 shadow-lg shadow-indigo-500/40"
-              : node.type === "multiplayer"
-                ? "bg-linear-to-br from-rose-500 to-pink-600 border-rose-300 shadow-lg shadow-rose-500/40"
-                : "bg-linear-to-br from-amber-500 to-orange-600 border-amber-300 shadow-lg shadow-amber-500/40",
+            : isLocked
+              ? "bg-linear-to-br from-slate-600 to-slate-700 border-slate-500 shadow-lg shadow-slate-500/30"
+              : node.type === "computational_thinking"
+                ? "bg-linear-to-br from-indigo-500 to-purple-600 border-indigo-300 shadow-lg shadow-indigo-500/40"
+                : node.type === "multiplayer"
+                  ? "bg-linear-to-br from-rose-500 to-pink-600 border-rose-300 shadow-lg shadow-rose-500/40"
+                  : "bg-linear-to-br from-amber-500 to-orange-600 border-amber-300 shadow-lg shadow-amber-500/40",
           isSelected && "scale-110 ring-4 ring-white/40",
         )}
       >
         <Icon
           className={cn(
             "h-7 w-7 sm:h-9 sm:w-9",
-            isLocked ? "text-muted-foreground" : "text-white",
+            fullyLocked ? "text-muted-foreground" : "text-white",
           )}
         />
+        {isLocked && !fullyLocked && (
+          <Lock className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-slate-800 p-0.5 text-amber-400 ring-2 ring-slate-700" />
+        )}
       </div>
 
       <div
@@ -82,7 +91,7 @@ export function MapNode({
           "whitespace-nowrap group-hover:bg-background",
         )}
       >
-        {isLocked ? "???" : node.name}
+        {fullyLocked ? "???" : node.name}
       </div>
     </motion.button>
   );

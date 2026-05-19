@@ -9,15 +9,21 @@ import { MapPaths } from "@/components/game/MapPaths";
 import { ModuleDetailPanel } from "@/components/game/ModuleDetailPanel";
 import { PlayerAvatar } from "@/components/game/PlayerAvatar";
 
+const ARENA_REQUIRED = 10;
+
 interface WorldMapClientProps {
   username?: string | null;
   avatarSeed?: string | null;
+  m2Progress?: number;
+  l1Progress?: number;
 }
 
-export function WorldMapClient({ username, avatarSeed }: WorldMapClientProps) {
+export function WorldMapClient({ username, avatarSeed, m2Progress = 0, l1Progress = 0 }: WorldMapClientProps) {
   const [selectedNode, setSelectedNode] = useState<MapNodeType | null>(null);
   const playerPosition = MAP_NODES.find((node) => node.id === "M2")
     ?.position || { x: 25, y: 70 };
+
+  const arenaLocked = m2Progress < ARENA_REQUIRED || l1Progress < ARENA_REQUIRED;
 
   const stars = useMemo(
     () =>
@@ -47,7 +53,7 @@ export function WorldMapClient({ username, avatarSeed }: WorldMapClientProps) {
         </p>
       </motion.div>
 
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-purple-900 to-slate-900">
+      <div className="absolute inset-0 bg-linear-to-br from-indigo-950 via-purple-900 to-slate-900">
         <div className="absolute inset-0 opacity-30">
           {stars.map((star) => (
             <motion.div
@@ -68,7 +74,7 @@ export function WorldMapClient({ username, avatarSeed }: WorldMapClientProps) {
         <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-indigo-500/20 blur-3xl" />
       </div>
 
-      <div className="relative h-full min-h-[600px] w-full">
+      <div className="relative h-full min-h-150 w-full">
         <MapPaths />
 
         {MAP_NODES.map((node) => (
@@ -77,6 +83,7 @@ export function WorldMapClient({ username, avatarSeed }: WorldMapClientProps) {
             node={node}
             isSelected={selectedNode?.id === node.id}
             isCurrent={node.id === "M2"}
+            isLocked={node.id === "ARENA" && arenaLocked}
             onClick={() => setSelectedNode(node)}
           />
         ))}
@@ -91,6 +98,9 @@ export function WorldMapClient({ username, avatarSeed }: WorldMapClientProps) {
       <ModuleDetailPanel
         node={selectedNode}
         onClose={() => setSelectedNode(null)}
+        isLocked={selectedNode?.id === "ARENA" && arenaLocked}
+        m2Progress={m2Progress}
+        l1Progress={l1Progress}
       />
     </main>
   );

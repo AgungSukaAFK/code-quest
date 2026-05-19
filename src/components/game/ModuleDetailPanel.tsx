@@ -2,16 +2,21 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
-import { Play, Swords, X } from "lucide-react";
+import { Lock, Play, Swords, X } from "lucide-react";
 import type { MapNode } from "@/lib/game/world-map-config";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
+const ARENA_REQUIRED = 10;
+
 interface ModuleDetailPanelProps {
   node: MapNode | null;
   onClose: () => void;
+  isLocked?: boolean;
+  m2Progress?: number;
+  l1Progress?: number;
 }
 
 const BADGE_LABEL: Record<string, string> = {
@@ -20,7 +25,7 @@ const BADGE_LABEL: Record<string, string> = {
   multiplayer: "Mode Multiplayer",
 };
 
-export function ModuleDetailPanel({ node, onClose }: ModuleDetailPanelProps) {
+export function ModuleDetailPanel({ node, onClose, isLocked = false, m2Progress = 0, l1Progress = 0 }: ModuleDetailPanelProps) {
   return (
     <AnimatePresence>
       {node && node.type !== "locked" && (
@@ -52,7 +57,47 @@ export function ModuleDetailPanel({ node, onClose }: ModuleDetailPanelProps) {
 
             <p className="mb-4 text-sm text-muted-foreground">{node.description}</p>
 
-            {node.type === "multiplayer" ? (
+            {node.type === "multiplayer" && isLocked ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+                  <Lock className="h-4 w-4 shrink-0" />
+                  <span>Selesaikan latihan untuk membuka arena</span>
+                </div>
+                {[
+                  { label: "Lembah Dekomposisi", count: m2Progress, href: "/play/M2" },
+                  { label: "Menara Logika Boolean", count: l1Progress, href: "/play/L1" },
+                ].map(({ label, count, href }) => (
+                  <div key={label}>
+                    <div className="mb-1 flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">{label}</span>
+                      <span className={cn("font-semibold", count >= ARENA_REQUIRED ? "text-emerald-600 dark:text-emerald-400" : "text-foreground")}>
+                        {Math.min(count, ARENA_REQUIRED)}/{ARENA_REQUIRED}
+                      </span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min(100, (count / ARENA_REQUIRED) * 100)}%` }}
+                        transition={{ duration: 0.6, ease: "easeOut" }}
+                        className={cn(
+                          "h-full rounded-full",
+                          count >= ARENA_REQUIRED ? "bg-emerald-500" : "bg-indigo-500",
+                        )}
+                      />
+                    </div>
+                    {count < ARENA_REQUIRED && (
+                      <Link
+                        href={href}
+                        className={cn(buttonVariants({ variant: "outline", size: "sm" }), "mt-2 w-full justify-center")}
+                      >
+                        <Play className="mr-1.5 h-3 w-3" />
+                        Latihan sekarang
+                      </Link>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : node.type === "multiplayer" ? (
               <Link
                 href="/multiplayer"
                 className={cn(

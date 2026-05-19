@@ -31,6 +31,8 @@ interface RLUpdateInfo {
   state_key_after: string;
 }
 
+const ARENA_REQUIRED = 10;
+
 interface PlayClientProps {
   module: {
     id: string;
@@ -41,9 +43,10 @@ interface PlayClientProps {
   avatarSeed: string | null;
   username: string | null;
   role: string | null;
+  initialUniqueCount?: number;
 }
 
-export function PlayClient({ module, sessionId, avatarSeed, username, role }: PlayClientProps) {
+export function PlayClient({ module, sessionId, avatarSeed, username, role, initialUniqueCount = 0 }: PlayClientProps) {
   const isModerator = role === "moderator";
   const router = useRouter();
 
@@ -82,10 +85,11 @@ export function PlayClient({ module, sessionId, avatarSeed, username, role }: Pl
   const [lastUpdate, setLastUpdate] = useState<RLUpdateInfo | null>(null);
   const puzzleStartTime = useRef<number>(0);
 
-  const progressLabel = useMemo(
-    () => `Puzzle selesai: ${completedPuzzleIds.length}`,
-    [completedPuzzleIds.length],
+  const uniqueTotal = useMemo(
+    () => Math.min(ARENA_REQUIRED, initialUniqueCount + completedPuzzleIds.length),
+    [initialUniqueCount, completedPuzzleIds.length],
   );
+  const progressLabel = `Soal unik: ${uniqueTotal}/${ARENA_REQUIRED}`;
 
   useEffect(() => {
     loadNextPuzzle();
