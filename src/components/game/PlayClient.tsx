@@ -31,7 +31,7 @@ interface RLUpdateInfo {
   state_key_after: string;
 }
 
-const ARENA_REQUIRED = 10;
+const ARENA_REQUIRED = 5;
 
 interface PlayClientProps {
   module: {

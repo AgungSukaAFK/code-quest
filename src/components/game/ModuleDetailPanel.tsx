@@ -9,7 +9,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-const ARENA_REQUIRED = 10;
+const ARENA_REQUIRED = 5;
 
 interface ModuleDetailPanelProps {
   node: MapNode | null;

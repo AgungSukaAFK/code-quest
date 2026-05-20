@@ -9,7 +9,7 @@ import { MapPaths } from "@/components/game/MapPaths";
 import { ModuleDetailPanel } from "@/components/game/ModuleDetailPanel";
 import { PlayerAvatar } from "@/components/game/PlayerAvatar";
 
-const ARENA_REQUIRED = 10;
+const ARENA_REQUIRED = 5;
 
 interface WorldMapClientProps {
   username?: string | null;
