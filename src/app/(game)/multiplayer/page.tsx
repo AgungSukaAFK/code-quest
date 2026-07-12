@@ -10,7 +10,7 @@ export default async function MultiplayerLobbyPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name,username,avatar_seed,role")
+    .select("display_name,username,avatar_seed,role,has_seen_arena_intro")
     .eq("id", user.id)
     .single();
 
@@ -27,8 +27,10 @@ export default async function MultiplayerLobbyPage() {
         }}
       />
       <MultiplayerLobbyClient
+        userId={user.id}
         displayName={profile?.display_name ?? profile?.username ?? "Siswa"}
         avatarSeed={profile?.avatar_seed ?? null}
+        hasSeenArenaIntro={Boolean(profile?.has_seen_arena_intro)}
       />
     </div>
   );

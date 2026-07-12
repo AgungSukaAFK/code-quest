@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, BookOpen, BrainCircuit, Loader2, Volume2, VolumeX } from "lucide-react";
@@ -21,6 +21,13 @@ import type {
   TruthTablePuzzle,
 } from "@/types/puzzle";
 import type { RLState } from "@/lib/rl/types";
+import { DialogBoxLayer } from "@/components/narrative/DialogBox";
+import {
+  NARRATIVE_SCRIPT,
+  modulePrefix,
+  type DialogScene,
+} from "@/lib/narrative/script";
+import { markSceneSeen } from "@/lib/narrative/seen";
 
 interface RLUpdateInfo {
   reward: number;
@@ -31,7 +38,7 @@ interface RLUpdateInfo {
   state_key_after: string;
 }
 
-const ARENA_REQUIRED = 5;
+const SOAL_PER_MODULE = 3;
 
 interface PlayClientProps {
   module: {
@@ -40,13 +47,15 @@ interface PlayClientProps {
     description: string | null;
   };
   sessionId: string;
+  userId: string;
   avatarSeed: string | null;
   username: string | null;
   role: string | null;
   initialUniqueCount?: number;
+  hasSeenModuleOpen?: boolean;
 }
 
-export function PlayClient({ module, sessionId, avatarSeed, username, role, initialUniqueCount = 0 }: PlayClientProps) {
+export function PlayClient({ module, sessionId, userId, avatarSeed, username, role, hasSeenModuleOpen = false }: PlayClientProps) {
   const isModerator = role === "moderator";
   const router = useRouter();
 
@@ -85,24 +94,56 @@ export function PlayClient({ module, sessionId, avatarSeed, username, role, init
   const [lastUpdate, setLastUpdate] = useState<RLUpdateInfo | null>(null);
   const puzzleStartTime = useRef<number>(0);
 
-  const uniqueTotal = useMemo(
-    () => Math.min(ARENA_REQUIRED, initialUniqueCount + completedPuzzleIds.length),
-    [initialUniqueCount, completedPuzzleIds.length],
+  const currentSoalNumber = Math.min(
+    SOAL_PER_MODULE,
+    completedPuzzleIds.length + 1,
   );
-  const progressLabel = `Soal unik: ${uniqueTotal}/${ARENA_REQUIRED}`;
+  const progressLabel = `Soal ${currentSoalNumber}/${SOAL_PER_MODULE}`;
+
+  // ── Cutscene / narasi ──────────────────────────────────────
+  const prefix = modulePrefix(module.id);
+  const [activeScene, setActiveScene] = useState<DialogScene | null>(null);
+  const afterSceneRef = useRef<(() => void) | null>(null);
+
+  function playScene(sceneId: string, after?: () => void) {
+    const scene = NARRATIVE_SCRIPT[sceneId];
+    if (!scene) {
+      after?.();
+      return;
+    }
+    afterSceneRef.current = after ?? null;
+    setActiveScene(scene);
+  }
+
+  function handleSceneComplete() {
+    const scene = activeScene;
+    setActiveScene(null);
+    if (scene?.persistColumn) {
+      void markSceneSeen(userId, scene.persistColumn);
+    }
+    const after = afterSceneRef.current;
+    afterSceneRef.current = null;
+    after?.();
+  }
 
   useEffect(() => {
     loadNextPuzzle();
+    if (prefix && !hasSeenModuleOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      playScene(`${prefix}_module_open`);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (!currentPuzzle) return;
+    // Jangan munculkan petunjuk saat cutscene sedang tampil — biar tidak menumpuk.
+    if (!currentPuzzle || activeScene) return;
     const key = `cq_instructions_seen_${currentPuzzle.type}`;
     if (!localStorage.getItem(key)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowInstructions(true);
     }
-  }, [currentPuzzle?.type]);
+  }, [currentPuzzle?.type, activeScene]);
 
   useEffect(() => {
     if (!isModerator) return;
@@ -216,13 +257,31 @@ export function PlayClient({ module, sessionId, avatarSeed, username, role, init
   };
 
   const handleContinue = () => {
-    if (currentPuzzle) {
-      setCompletedPuzzleIds((prev) => [...prev, currentPuzzle.id]);
-    }
+    const newCompleted = currentPuzzle
+      ? [...completedPuzzleIds, currentPuzzle.id]
+      : completedPuzzleIds;
 
+    setCompletedPuzzleIds(newCompleted);
     setShowResult(false);
     setResult(null);
 
+    // Sudah 3 soal → tutup modul (cutscene), lalu kembali ke peta.
+    if (newCompleted.length >= SOAL_PER_MODULE) {
+      const goToMap = () =>
+        router.push(`/world-map?completed=${module.id}`);
+      if (prefix) {
+        playScene(`${prefix}_module_close`, goToMap);
+      } else {
+        goToMap();
+      }
+      return;
+    }
+
+    // Transisi singkat sebelum soal ke-2 / ke-3.
+    const upcomingSoal = newCompleted.length + 1;
+    if (prefix) {
+      playScene(`${prefix}_soal${upcomingSoal}`);
+    }
     loadNextPuzzle();
   };
 
@@ -407,6 +466,8 @@ export function PlayClient({ module, sessionId, avatarSeed, username, role, init
           }
         />
       )}
+
+      <DialogBoxLayer scene={activeScene} onComplete={handleSceneComplete} />
     </main>
   );
 }

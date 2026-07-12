@@ -37,6 +37,9 @@ export default async function PlayPage({ params }: PlayPageProps) {
 
   if (!sessionResult.data) redirect("/world-map");
 
+  const prefix = moduleId.toLowerCase();
+  const hasSeenModuleOpen = Boolean(profile?.[`has_seen_${prefix}_open`]);
+
   const puzzleIds = (puzzlesResult.data ?? []).map((p) => p.id);
   let initialUniqueCount = 0;
   if (puzzleIds.length > 0) {
@@ -68,10 +71,12 @@ export default async function PlayPage({ params }: PlayPageProps) {
           description: module.description,
         }}
         sessionId={sessionResult.data.id}
+        userId={user.id}
         avatarSeed={profile?.avatar_seed ?? null}
         username={profile?.username ?? null}
         role={profile?.role ?? null}
         initialUniqueCount={initialUniqueCount}
+        hasSeenModuleOpen={hasSeenModuleOpen}
       />
     </div>
   );

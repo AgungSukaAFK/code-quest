@@ -8,6 +8,8 @@ import type { MultiplayerRoom, RoomPlayer, RoomQuestion, RoomAnswer } from "@/ty
 import { WaitingRoom } from "@/components/multiplayer/WaitingRoom";
 import { MultiplayerGame } from "@/components/multiplayer/MultiplayerGame";
 import { FinalPodium } from "@/components/multiplayer/FinalPodium";
+import { DialogBoxLayer } from "@/components/narrative/DialogBox";
+import { NARRATIVE_SCRIPT, type DialogScene } from "@/lib/narrative/script";
 
 interface Props {
   initialRoom: MultiplayerRoom;
@@ -89,6 +91,19 @@ export function MultiplayerRoomClient({ initialRoom, initialPlayers, questions, 
     setAnswers([]);
   }, [room.current_question_index]);
 
+  // Cutscene kemenangan: tampil sekali saat pertandingan selesai (per sesi).
+  const [activeScene, setActiveScene] = useState<DialogScene | null>(null);
+  const [victoryShown, setVictoryShown] = useState(false);
+
+  useEffect(() => {
+    if (room.status === "finished" && !victoryShown) {
+      /* eslint-disable react-hooks/set-state-in-effect */
+      setVictoryShown(true);
+      setActiveScene(NARRATIVE_SCRIPT.arena_victory);
+      /* eslint-enable react-hooks/set-state-in-effect */
+    }
+  }, [room.status, victoryShown]);
+
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
   const isHost = currentPlayer.is_host;
   const currentQuestion = questions[room.current_question_index] ?? null;
@@ -96,8 +111,9 @@ export function MultiplayerRoomClient({ initialRoom, initialPlayers, questions, 
     (a) => players.find((p) => p.user_id === userId)?.id === a.player_id,
   ) ?? null;
 
+  let content;
   if (room.status === "waiting") {
-    return (
+    content = (
       <WaitingRoom
         room={room}
         players={sortedPlayers}
@@ -105,10 +121,8 @@ export function MultiplayerRoomClient({ initialRoom, initialPlayers, questions, 
         currentPlayerId={currentPlayer.id}
       />
     );
-  }
-
-  if (room.status === "playing" && currentQuestion) {
-    return (
+  } else if (room.status === "playing" && currentQuestion) {
+    content = (
       <MultiplayerGame
         room={room}
         question={currentQuestion}
@@ -121,15 +135,25 @@ export function MultiplayerRoomClient({ initialRoom, initialPlayers, questions, 
         totalQuestions={questions.length}
       />
     );
+  } else {
+    content = (
+      <FinalPodium
+        players={sortedPlayers}
+        currentPlayerId={currentPlayer.id}
+        roomCode={room.code}
+        allAnswers={allAnswers}
+        totalQuestions={questions.length}
+      />
+    );
   }
 
   return (
-    <FinalPodium
-      players={sortedPlayers}
-      currentPlayerId={currentPlayer.id}
-      roomCode={room.code}
-      allAnswers={allAnswers}
-      totalQuestions={questions.length}
-    />
+    <>
+      {content}
+      <DialogBoxLayer
+        scene={activeScene}
+        onComplete={() => setActiveScene(null)}
+      />
+    </>
   );
 }

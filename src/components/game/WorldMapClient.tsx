@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import type { MapNode as MapNodeType } from "@/lib/game/world-map-config";
 import { MAP_NODES } from "@/lib/game/world-map-config";
@@ -8,22 +8,51 @@ import { MapNode } from "@/components/game/MapNode";
 import { MapPaths } from "@/components/game/MapPaths";
 import { ModuleDetailPanel } from "@/components/game/ModuleDetailPanel";
 import { PlayerAvatar } from "@/components/game/PlayerAvatar";
-
-const ARENA_REQUIRED = 5;
+import { DialogBoxLayer } from "@/components/narrative/DialogBox";
+import { NARRATIVE_SCRIPT, type DialogScene } from "@/lib/narrative/script";
+import { markSceneSeen } from "@/lib/narrative/seen";
 
 interface WorldMapClientProps {
+  userId: string;
   username?: string | null;
   avatarSeed?: string | null;
-  m2Progress?: number;
-  l1Progress?: number;
+  m2Done?: boolean;
+  l1Done?: boolean;
+  hasSeenIntroWorld?: boolean;
 }
 
-export function WorldMapClient({ username, avatarSeed, m2Progress = 0, l1Progress = 0 }: WorldMapClientProps) {
+export function WorldMapClient({
+  userId,
+  username,
+  avatarSeed,
+  m2Done = false,
+  l1Done = false,
+  hasSeenIntroWorld = false,
+}: WorldMapClientProps) {
   const [selectedNode, setSelectedNode] = useState<MapNodeType | null>(null);
   const playerPosition = MAP_NODES.find((node) => node.id === "M2")
     ?.position || { x: 25, y: 70 };
 
-  const arenaLocked = m2Progress < ARENA_REQUIRED || l1Progress < ARENA_REQUIRED;
+  const arenaLocked = !(m2Done && l1Done);
+
+  // Intro dunia (sekali tampil saat pertama mendarat di peta).
+  const [activeScene, setActiveScene] = useState<DialogScene | null>(null);
+
+  useEffect(() => {
+    if (!hasSeenIntroWorld) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActiveScene(NARRATIVE_SCRIPT.intro_world);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleSceneComplete() {
+    const scene = activeScene;
+    setActiveScene(null);
+    if (scene?.persistColumn) {
+      void markSceneSeen(userId, scene.persistColumn);
+    }
+  }
 
   const stars = useMemo(
     () =>
@@ -99,9 +128,11 @@ export function WorldMapClient({ username, avatarSeed, m2Progress = 0, l1Progres
         node={selectedNode}
         onClose={() => setSelectedNode(null)}
         isLocked={selectedNode?.id === "ARENA" && arenaLocked}
-        m2Progress={m2Progress}
-        l1Progress={l1Progress}
+        m2Done={m2Done}
+        l1Done={l1Done}
       />
+
+      <DialogBoxLayer scene={activeScene} onComplete={handleSceneComplete} />
     </main>
   );
 }

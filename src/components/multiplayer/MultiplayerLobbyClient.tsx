@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { Difficulty } from "@/types/multiplayer";
+import { DialogBoxLayer } from "@/components/narrative/DialogBox";
+import { NARRATIVE_SCRIPT, type DialogScene } from "@/lib/narrative/script";
+import { markSceneSeen } from "@/lib/narrative/seen";
 
 const INSTRUCTIONS = [
   {
@@ -110,8 +113,10 @@ function InstructionsModal({ onClose }: { onClose: () => void }) {
 }
 
 interface Props {
+  userId: string;
   displayName: string;
   avatarSeed: string | null;
+  hasSeenArenaIntro?: boolean;
 }
 
 const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; desc: string; color: string }[] = [
@@ -123,7 +128,7 @@ const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; desc: string; colo
 
 type View = "home" | "create" | "join";
 
-export function MultiplayerLobbyClient({ displayName, avatarSeed }: Props) {
+export function MultiplayerLobbyClient({ userId, displayName, avatarSeed, hasSeenArenaIntro = false }: Props) {
   const router = useRouter();
   const [view, setView] = useState<View>("home");
   const [difficulty, setDifficulty] = useState<Difficulty>("random");
@@ -131,6 +136,25 @@ export function MultiplayerLobbyClient({ displayName, avatarSeed }: Props) {
   const [joinCode, setJoinCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
+
+  // Cutscene intro Arena (sekali tampil).
+  const [activeScene, setActiveScene] = useState<DialogScene | null>(null);
+
+  useEffect(() => {
+    if (!hasSeenArenaIntro) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActiveScene(NARRATIVE_SCRIPT.arena_intro);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleSceneComplete() {
+    const scene = activeScene;
+    setActiveScene(null);
+    if (scene?.persistColumn) {
+      void markSceneSeen(userId, scene.persistColumn);
+    }
+  }
 
   useEffect(() => {
     const seen = localStorage.getItem("mp_instructions_seen");
@@ -181,6 +205,7 @@ export function MultiplayerLobbyClient({ displayName, avatarSeed }: Props) {
 
   return (
     <main className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+      <DialogBoxLayer scene={activeScene} onComplete={handleSceneComplete} />
       <AnimatePresence>
         {showInstructions && <InstructionsModal onClose={closeInstructions} />}
       </AnimatePresence>

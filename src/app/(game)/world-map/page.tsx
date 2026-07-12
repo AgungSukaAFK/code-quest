@@ -15,27 +15,11 @@ export default async function WorldMapPage() {
     .eq("id", user.id)
     .single();
 
-  // Fetch puzzle IDs per module
-  const [{ data: m2Puzzles }, { data: l1Puzzles }] = await Promise.all([
-    supabase.from("puzzles").select("id").eq("module_id", "M2"),
-    supabase.from("puzzles").select("id").eq("module_id", "L1"),
-  ]);
-
-  const m2Ids = (m2Puzzles ?? []).map((p) => p.id);
-  const l1Ids = (l1Puzzles ?? []).map((p) => p.id);
-
-  // Count unique puzzle IDs the user has ever submitted an answer to
-  const [m2AttemptsRes, l1AttemptsRes] = await Promise.all([
-    m2Ids.length > 0
-      ? supabase.from("attempts").select("puzzle_id").eq("user_id", user.id).in("puzzle_id", m2Ids)
-      : Promise.resolve({ data: [] }),
-    l1Ids.length > 0
-      ? supabase.from("attempts").select("puzzle_id").eq("user_id", user.id).in("puzzle_id", l1Ids)
-      : Promise.resolve({ data: [] }),
-  ]);
-
-  const m2Progress = new Set((m2AttemptsRes.data ?? []).map((a) => a.puzzle_id)).size;
-  const l1Progress = new Set((l1AttemptsRes.data ?? []).map((a) => a.puzzle_id)).size;
+  // Status babak berbasis flag cerita (siswa dianggap selesai modul
+  // setelah menuntaskan 3 soal — lihat PlayClient).
+  const m2Done = Boolean(profile?.has_completed_m2);
+  const l1Done = Boolean(profile?.has_completed_l1);
+  const hasSeenIntroWorld = Boolean(profile?.has_seen_intro_world);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -50,10 +34,12 @@ export default async function WorldMapPage() {
         }}
       />
       <WorldMapClient
+        userId={user.id}
         username={profile?.username}
         avatarSeed={profile?.avatar_seed}
-        m2Progress={m2Progress}
-        l1Progress={l1Progress}
+        m2Done={m2Done}
+        l1Done={l1Done}
+        hasSeenIntroWorld={hasSeenIntroWorld}
       />
     </div>
   );
