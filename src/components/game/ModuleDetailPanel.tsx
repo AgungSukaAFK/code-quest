@@ -100,6 +100,20 @@ export function ModuleDetailPanel({ node, onClose, isLocked = false, m2Done = fa
                 <Swords className="mr-2 h-4 w-4" />
                 Masuk Arena
               </Link>
+            ) : isLocked ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+                  <Lock className="h-4 w-4 shrink-0" />
+                  <span>Selesaikan Lembah Dekomposisi (3 soal) dulu untuk membuka babak ini.</span>
+                </div>
+                <Link
+                  href="/play/M2"
+                  className={cn(buttonVariants({ size: "lg" }), "w-full justify-center")}
+                >
+                  <Play className="mr-2 h-4 w-4" />
+                  Ke Lembah Dekomposisi
+                </Link>
+              </div>
             ) : (
               <Link
                 href={`/play/${node.id}`}

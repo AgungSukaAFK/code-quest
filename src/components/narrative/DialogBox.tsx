@@ -3,13 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronRight, SkipForward } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { sounds } from "@/lib/sounds";
-import type { DialogScene } from "@/lib/narrative/script";
-
-const KOMPIL_AVATAR =
-  "https://api.dicebear.com/7.x/bottts/svg?seed=sang-kompil";
+import { useAudioStore } from "@/stores/audioStore";
+import { CHAR } from "@/lib/assets";
+import { THE_GLITCH, type DialogScene } from "@/lib/narrative/script";
 
 const TYPE_SPEED_MS = 22;
 
@@ -25,7 +24,17 @@ export function DialogBox({ scene, onComplete }: DialogBoxProps) {
 
   const line = scene.lines[lineIndex];
   const isLastLine = lineIndex >= scene.lines.length - 1;
+  const isGlitchSpeaking = line?.speaker === THE_GLITCH;
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const pushDuck = useAudioStore((s) => s.pushDuck);
+  const popDuck = useAudioStore((s) => s.popDuck);
+
+  // Pelankan musik selama cutscene tampil.
+  useEffect(() => {
+    pushDuck();
+    return () => popDuck();
+  }, [pushDuck, popDuck]);
 
   // Catatan: komponen ini di-mount ulang via `key={scene.id}` (lihat DialogBoxLayer),
   // jadi lineIndex otomatis mulai dari 0 saat scene berganti — tak perlu reset manual.
@@ -77,50 +86,101 @@ export function DialogBox({ scene, onComplete }: DialogBoxProps) {
   if (!line) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 backdrop-blur-sm sm:items-center"
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 overflow-hidden"
       role="dialog"
       aria-modal="true"
       onClick={handleAdvance}
     >
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
+      {/* Backdrop: background cutscene bila ada, atau gelap polos */}
+      {scene.background ? (
+        <>
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url('${scene.background}')` }}
+          />
+          <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/55 to-black/35" />
+        </>
+      ) : (
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      )}
+
+      {/* Sang Kompil di kiri bawah — di-mirror (scaleX negatif) supaya menghadap
+          kanan; membesar sedikit saat dia bicara, meredup saat diam. */}
+      <motion.img
+        src={CHAR.kompil}
+        alt="Sang Kompil"
+        initial={{ opacity: 0, x: -40, scaleX: -1, scaleY: 1 }}
+        animate={{
+          opacity: isGlitchSpeaking ? 0.5 : 1,
+          x: 0,
+          scaleX: isGlitchSpeaking ? -0.92 : -1.08,
+          scaleY: isGlitchSpeaking ? 0.92 : 1.08,
+        }}
         transition={{ duration: 0.35 }}
-        className="w-full max-w-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+        style={{ transformOrigin: "bottom center" }}
+        className={cn(
+          "pointer-events-none absolute bottom-24 left-0 h-[42vh] object-contain object-bottom drop-shadow-2xl transition-[filter] duration-300 sm:bottom-28 sm:left-6 sm:h-128",
+          isGlitchSpeaking && "grayscale",
+        )}
+      />
+
+      {/* The Glitch di kanan bawah (menghadap kiri) — menyala & membesar saat bicara */}
+      {scene.figure && (
+        <motion.img
+          src={scene.figure}
+          alt="The Glitch"
+          initial={{ opacity: 0, x: 40 }}
+          animate={{
+            opacity: isGlitchSpeaking ? 0.98 : 0.45,
+            x: 0,
+            scale: isGlitchSpeaking ? 1.08 : 0.92,
+          }}
+          transition={{ duration: 0.35, delay: 0.1 }}
+          style={{ transformOrigin: "bottom center" }}
+          className={cn(
+            "pointer-events-none absolute bottom-24 right-0 h-[36vh] object-contain object-bottom drop-shadow-2xl transition-[filter] duration-300 sm:bottom-28 sm:right-6 sm:h-112",
+            !isGlitchSpeaking && "grayscale",
+          )}
+        />
+      )}
+
+      {/* Kartu dialog di bawah */}
+      <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
         {line.stage && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mb-3 text-center text-xs italic text-white/70 sm:text-sm"
-          >
+          <p className="mx-auto mb-2 max-w-2xl text-center text-xs italic text-white/70 sm:text-sm">
             {line.stage}
-          </motion.p>
+          </p>
         )}
 
-        <div className="relative rounded-2xl border-2 border-primary/40 bg-card/95 p-5 shadow-2xl sm:p-6">
-          <div className="flex items-start gap-4">
-            <Avatar className="h-14 w-14 shrink-0 border-2 border-primary/50 bg-background shadow-md sm:h-16 sm:w-16">
-              <AvatarImage src={KOMPIL_AVATAR} alt={line.speaker} />
-              <AvatarFallback>SK</AvatarFallback>
-            </Avatar>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className={cn(
+            "mx-auto w-full max-w-2xl rounded-2xl border-2 bg-card/95 p-4 shadow-2xl sm:p-5",
+            isGlitchSpeaking ? "border-rose-500/50" : "border-primary/40",
+          )}
+        >
+          <p
+            className={cn(
+              "mb-1 text-sm font-bold sm:text-base",
+              isGlitchSpeaking ? "text-rose-400" : "text-primary",
+            )}
+          >
+            {line.speaker}
+          </p>
+          <p className="min-h-14 text-sm leading-relaxed sm:text-base">
+            {typed}
+            {isTyping && (
+              <span className="ml-0.5 inline-block animate-pulse">▍</span>
+            )}
+          </p>
 
-            <div className="min-w-0 flex-1">
-              <p className="mb-1 text-sm font-bold text-primary sm:text-base">
-                {line.speaker}
-              </p>
-              <p className="min-h-[3.5rem] text-sm leading-relaxed sm:text-base">
-                {typed}
-                {isTyping && (
-                  <span className="ml-0.5 inline-block animate-pulse">▍</span>
-                )}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4 flex items-center justify-between gap-2">
+          <div className="mt-3 flex items-center justify-between gap-2">
             <div className="flex gap-1">
               {scene.lines.map((_, i) => (
                 <span
@@ -133,7 +193,10 @@ export function DialogBox({ scene, onComplete }: DialogBoxProps) {
               ))}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div
+              className="flex items-center gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
               <Button
                 variant="ghost"
                 size="sm"
@@ -149,9 +212,9 @@ export function DialogBox({ scene, onComplete }: DialogBoxProps) {
               </Button>
             </div>
           </div>
-        </div>
-      </motion.div>
-    </div>
+        </motion.div>
+      </div>
+    </motion.div>
   );
 }
 

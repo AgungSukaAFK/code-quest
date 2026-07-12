@@ -15,6 +15,11 @@ export interface ManagedUser {
   created_at: string;
 }
 
+export interface ManagedClass {
+  id: string;
+  name: string;
+}
+
 export default async function ModeratorUsersPage() {
   const supabase = await createClient();
 
@@ -35,6 +40,15 @@ export default async function ModeratorUsersPage() {
     .from("profiles")
     .select("id, nisn, username, display_name, class_name, role, created_at")
     .order("created_at", { ascending: false });
+
+  const { data: classRows } = await admin
+    .from("classes")
+    .select("id, name")
+    .order("name");
+  const classes: ManagedClass[] = (classRows ?? []).map((c) => ({
+    id: c.id as string,
+    name: c.name as string,
+  }));
 
   const { data: authUsers } = await admin.auth.admin.listUsers();
 
@@ -64,7 +78,7 @@ export default async function ModeratorUsersPage() {
           role: currentProfile?.role,
         }}
       />
-      <UsersClient users={users} currentUserId={user.id} />
+      <UsersClient users={users} classes={classes} currentUserId={user.id} />
     </div>
   );
 }

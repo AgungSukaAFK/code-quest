@@ -2,6 +2,8 @@ import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/layout/Header";
 import { PlayClient } from "@/components/game/PlayClient";
+import { LevelBackground } from "@/components/game/LevelBackground";
+import { BG } from "@/lib/assets";
 
 interface PlayPageProps {
   params: Promise<{ moduleId: string }>;
@@ -51,8 +53,13 @@ export default async function PlayPage({ params }: PlayPageProps) {
     initialUniqueCount = new Set((prevAttempts ?? []).map((a) => a.puzzle_id)).size;
   }
 
+  // Modul sudah tuntas (>=3 soal unik) → masuk mode "latihan bebas" (tak terbatas).
+  const alreadyCompleted = initialUniqueCount >= 3;
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="relative min-h-screen">
+      <LevelBackground src={moduleId === "L1" ? BG.menara : BG.lembah} />
+      <div className="relative z-10">
       <Header
         user={{
           id: user.id,
@@ -77,7 +84,9 @@ export default async function PlayPage({ params }: PlayPageProps) {
         role={profile?.role ?? null}
         initialUniqueCount={initialUniqueCount}
         hasSeenModuleOpen={hasSeenModuleOpen}
+        alreadyCompleted={alreadyCompleted}
       />
+      </div>
     </div>
   );
 }

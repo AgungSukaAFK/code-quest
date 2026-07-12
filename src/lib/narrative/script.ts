@@ -3,7 +3,10 @@
 // Tiap modul materi = 3 soal: module_open -> [soal2 -> soal3 transisi] -> module_close.
 // Sumber naskah lengkap: /naskah-cerita-codequest.md (di-collapse per-modul).
 
+import { BG, CHAR } from "@/lib/assets";
+
 export const SANG_KOMPIL = "Sang Kompil";
+export const THE_GLITCH = "The Glitch";
 
 // Kolom boolean di tabel `profiles` untuk cutscene "sekali tampil".
 export type NarrativeColumn =
@@ -27,6 +30,10 @@ export interface DialogScene {
   trigger: "once" | "per_session";
   /** Kolom profiles yang di-set true saat scene selesai (untuk trigger "once"). */
   persistColumn?: NarrativeColumn;
+  /** URL background full-screen khusus cutscene ini (opsional). */
+  background?: string;
+  /** URL karakter tambahan (mis. The Glitch) yang muncul di sisi berlawanan (opsional). */
+  figure?: string;
   lines: DialogLine[];
 }
 
@@ -36,6 +43,7 @@ export const NARRATIVE_SCRIPT: Record<string, DialogScene> = {
     id: "intro_world",
     trigger: "once",
     persistColumn: "has_seen_intro_world",
+    background: BG.worldmap,
     lines: [
       {
         speaker: SANG_KOMPIL,
@@ -66,6 +74,8 @@ export const NARRATIVE_SCRIPT: Record<string, DialogScene> = {
     id: "m2_module_open",
     trigger: "once",
     persistColumn: "has_seen_m2_open",
+    background: BG.lembahGlitched,
+    figure: CHAR.glitch,
     lines: [
       {
         speaker: SANG_KOMPIL,
@@ -73,12 +83,20 @@ export const NARRATIVE_SCRIPT: Record<string, DialogScene> = {
         stage: "Lembah dengan asap dapur warung; orang-orang berlarian bingung.",
       },
       {
-        speaker: SANG_KOMPIL,
-        text: "Ini gara-gara The Glitch. Dia bikin orang-orang lupa cara mecah masalah besar jadi langkah-langkah kecil yang masuk akal.",
+        speaker: THE_GLITCH,
+        text: "Hehehe... kacau, kan? Aku suka banget lihat semuanya berantakan begini. Nggak ada urutan, nggak ada yang beres. Sempurna!",
       },
       {
         speaker: SANG_KOMPIL,
-        text: "Tugas kamu dasarnya gampang: tiap ada masalah besar, pecah dulu jadi bagian-bagian kecil. Terus kelompokkan sesuai tahapannya — mana persiapan, mana inti kerjaan, mana penutup.",
+        text: "The Glitch! Jadi ini ulahmu. Kamu bikin orang-orang lupa cara mecah masalah besar jadi langkah-langkah kecil.",
+      },
+      {
+        speaker: THE_GLITCH,
+        text: "Dan kamu mau membetulkannya? Silakan coba, bocah. Kalau bisa. Ha!",
+      },
+      {
+        speaker: SANG_KOMPIL,
+        text: "Tenang, kita hadapi bareng. Caranya gampang: tiap ada masalah besar, pecah dulu jadi bagian kecil, terus kelompokkan sesuai tahapannya — mana persiapan, mana inti kerjaan, mana penutup.",
       },
       {
         speaker: SANG_KOMPIL,
@@ -110,6 +128,7 @@ export const NARRATIVE_SCRIPT: Record<string, DialogScene> = {
     id: "m2_module_close",
     trigger: "once",
     persistColumn: "has_completed_m2",
+    background: BG.lembah,
     lines: [
       {
         speaker: SANG_KOMPIL,
@@ -126,12 +145,30 @@ export const NARRATIVE_SCRIPT: Record<string, DialogScene> = {
       },
     ],
   },
+  m2_replay: {
+    id: "m2_replay",
+    trigger: "per_session",
+    background: BG.lembah,
+    lines: [
+      {
+        speaker: SANG_KOMPIL,
+        text: "Hei, selamat datang lagi di Lembah Dekomposisi! Berkat kamu, di sini udah aman — semua orang kerja rapi dan urutannya masuk akal lagi.",
+        stage: "Lembah tenang, dapur Bu Warung mengepul santai.",
+      },
+      {
+        speaker: SANG_KOMPIL,
+        text: "Nggak ada misi wajib di sini sekarang. Tapi kalau kamu mau terus mengasah, silakan — aku siapin soal sebanyak yang kamu mau. Latihan bebas, tanpa batas!",
+      },
+    ],
+  },
 
   // ── Level 2: L1 Boolean (Benar-Salah) ────────────────────────
   l1_module_open: {
     id: "l1_module_open",
     trigger: "once",
     persistColumn: "has_seen_l1_open",
+    background: BG.menara,
+    figure: CHAR.glitch,
     lines: [
       {
         speaker: SANG_KOMPIL,
@@ -139,12 +176,20 @@ export const NARRATIVE_SCRIPT: Record<string, DialogScene> = {
         stage: "Menara tinggi; lampu berkedip nggak konsisten, kadang hijau kadang merah.",
       },
       {
-        speaker: SANG_KOMPIL,
-        text: "The Glitch nyerang bagian paling dasar dari cara berpikir logis: aturan AND, OR, dan NOT. Kalau ini kacau, semua keputusan yang dibuat berdasarkan aturan itu ikut kacau.",
+        speaker: THE_GLITCH,
+        text: "Benar jadi salah, salah jadi benar... siapa sih yang peduli? Aturan itu membosankan. Aku cuma bikin sedikit lebih 'seru'!",
       },
       {
         speaker: SANG_KOMPIL,
-        text: "Tugas kamu: bantu nyusun ulang tabel kebenarannya. Tiap kombinasi BENAR (B) dan SALAH (S) harus pas sesuai aturannya.",
+        text: "Seru katamu? Kalau logika dasar — AND, OR, NOT — dibikin kacau, semua keputusan ikut kacau. Kita betulkan, sekarang juga.",
+      },
+      {
+        speaker: THE_GLITCH,
+        text: "Cih. Lihat saja berapa lama kamu bertahan di menaraku ini...",
+      },
+      {
+        speaker: SANG_KOMPIL,
+        text: "Tugas kamu: bantu susun ulang tabel kebenarannya. Tiap kombinasi BENAR (B) dan SALAH (S) harus pas sesuai aturannya.",
       },
       {
         speaker: SANG_KOMPIL,
@@ -176,6 +221,7 @@ export const NARRATIVE_SCRIPT: Record<string, DialogScene> = {
     id: "l1_module_close",
     trigger: "once",
     persistColumn: "has_completed_l1",
+    background: BG.menaraStabil,
     lines: [
       {
         speaker: SANG_KOMPIL,
@@ -192,21 +238,47 @@ export const NARRATIVE_SCRIPT: Record<string, DialogScene> = {
       },
     ],
   },
+  l1_replay: {
+    id: "l1_replay",
+    trigger: "per_session",
+    background: BG.menaraStabil,
+    lines: [
+      {
+        speaker: SANG_KOMPIL,
+        text: "Selamat datang kembali di Menara Logika Boolean! Lampunya udah stabil semua — hijau BENAR, merah SALAH, konsisten. Semua berkat kamu.",
+        stage: "Menara tenang, lampu berkedip teratur.",
+      },
+      {
+        speaker: SANG_KOMPIL,
+        text: "Nggak ada yang perlu dibetulin lagi di sini. Tapi kalau mau terus latihan tabel kebenaran, ayo aja — soalnya nggak terbatas kok. Santai, nikmatin!",
+      },
+    ],
+  },
 
   // ── Level 3: Arena (Multiplayer) — dipakai pada Fase 4 ───────
   arena_intro: {
     id: "arena_intro",
     trigger: "once",
     persistColumn: "has_seen_arena_intro",
+    background: BG.arena,
+    figure: CHAR.glitch,
     lines: [
       {
         speaker: SANG_KOMPIL,
-        text: "Ini Arena. The Glitch udah kepepet, dan sekarang dia mau ngadepin kita semua sekaligus, secepat mungkin, biar kita nggak sempat mikir panjang.",
+        text: "Ini Arena. Kamu udah benerin Lembah dan Menara — The Glitch kepepet sekarang.",
         stage: "Arena besar; langit retak dengan pola distorsi.",
       },
       {
+        speaker: THE_GLITCH,
+        text: "Kepepet?! Justru sekarang aku baru serius! Akan kuhadapi kalian semua sekaligus — secepat mungkin, biar kalian nggak sempat berpikir!",
+      },
+      {
         speaker: SANG_KOMPIL,
-        text: "Di sini nggak ada waktu mikir lama kayak di Lembah atau Menara. Semua harus cepat dan tepat. Untungnya, kamu udah latihan semua dasarnya.",
+        text: "Nah, itu dia. Di sini nggak ada waktu mikir lama kayak di Lembah atau Menara — semua harus cepat dan tepat. Untung kamu udah latihan semua dasarnya.",
+      },
+      {
+        speaker: THE_GLITCH,
+        text: "Kecepatan? Ketepatan? Kita lihat siapa yang tumbang duluan. Bersiaplah!",
       },
       {
         speaker: SANG_KOMPIL,
@@ -227,6 +299,8 @@ export const NARRATIVE_SCRIPT: Record<string, DialogScene> = {
   arena_victory: {
     id: "arena_victory",
     trigger: "per_session",
+    background: BG.arenaVictory,
+    figure: CHAR.glitch,
     lines: [
       {
         speaker: SANG_KOMPIL,

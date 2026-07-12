@@ -11,6 +11,7 @@ import { PlayerAvatar } from "@/components/game/PlayerAvatar";
 import { DialogBoxLayer } from "@/components/narrative/DialogBox";
 import { NARRATIVE_SCRIPT, type DialogScene } from "@/lib/narrative/script";
 import { markSceneSeen } from "@/lib/narrative/seen";
+import { BG } from "@/lib/assets";
 
 interface WorldMapClientProps {
   userId: string;
@@ -30,10 +31,29 @@ export function WorldMapClient({
   hasSeenIntroWorld = false,
 }: WorldMapClientProps) {
   const [selectedNode, setSelectedNode] = useState<MapNodeType | null>(null);
-  const playerPosition = MAP_NODES.find((node) => node.id === "M2")
-    ?.position || { x: 25, y: 70 };
 
+  // L1 kebuka setelah M2 selesai; Arena setelah keduanya selesai.
+  const l1Locked = !m2Done;
   const arenaLocked = !(m2Done && l1Done);
+
+  function isNodeLocked(id: string) {
+    if (id === "ARENA") return arenaLocked;
+    if (id === "L1") return l1Locked;
+    return false;
+  }
+  function isNodeDone(id: string) {
+    if (id === "M2") return m2Done;
+    if (id === "L1") return l1Done;
+    return false;
+  }
+
+  // Objektif terkini = node pertama yang belum selesai (buat "you are here").
+  const currentNodeId = !m2Done ? "M2" : !l1Done ? "L1" : "ARENA";
+  const playerPosition =
+    MAP_NODES.find((node) => node.id === currentNodeId)?.position ?? {
+      x: 36,
+      y: 78,
+    };
 
   // Intro dunia (sekali tampil saat pertama mendarat di peta).
   const [activeScene, setActiveScene] = useState<DialogScene | null>(null);
@@ -82,7 +102,11 @@ export function WorldMapClient({
         </p>
       </motion.div>
 
-      <div className="absolute inset-0 bg-linear-to-br from-indigo-950 via-purple-900 to-slate-900">
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url('${BG.worldmap}')` }}
+      >
+        <div className="absolute inset-0 bg-slate-950/45" />
         <div className="absolute inset-0 opacity-30">
           {stars.map((star) => (
             <motion.div
@@ -111,8 +135,9 @@ export function WorldMapClient({
             key={node.id}
             node={node}
             isSelected={selectedNode?.id === node.id}
-            isCurrent={node.id === "M2"}
-            isLocked={node.id === "ARENA" && arenaLocked}
+            isCurrent={node.id === currentNodeId}
+            isLocked={isNodeLocked(node.id)}
+            isCompleted={isNodeDone(node.id)}
             onClick={() => setSelectedNode(node)}
           />
         ))}
@@ -127,7 +152,7 @@ export function WorldMapClient({
       <ModuleDetailPanel
         node={selectedNode}
         onClose={() => setSelectedNode(null)}
-        isLocked={selectedNode?.id === "ARENA" && arenaLocked}
+        isLocked={selectedNode ? isNodeLocked(selectedNode.id) : false}
         m2Done={m2Done}
         l1Done={l1Done}
       />

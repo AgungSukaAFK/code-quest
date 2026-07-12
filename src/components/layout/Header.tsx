@@ -13,7 +13,10 @@ import {
   Settings2,
   Trophy,
   User as UserIcon,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
+import { useAudioStore } from "@/stores/audioStore";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +39,8 @@ interface HeaderProps {
 export function Header({ user }: HeaderProps) {
   const router = useRouter();
   const supabase = createClient();
+  const muted = useAudioStore((s) => s.muted);
+  const toggleMuted = useAudioStore((s) => s.toggleMuted);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -128,7 +133,19 @@ export function Header({ user }: HeaderProps) {
           />
         </div>
 
-        <div className="flex-1 flex justify-end">
+        <div className="flex-1 flex items-center justify-end gap-1">
+          <button
+            type="button"
+            onClick={toggleMuted}
+            aria-label={muted ? "Aktifkan suara" : "Matikan suara"}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors outline-none"
+          >
+            {muted ? (
+              <VolumeX className="h-4 w-4" />
+            ) : (
+              <Volume2 className="h-4 w-4" />
+            )}
+          </button>
           {user && (
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-muted transition-colors outline-none">
@@ -204,6 +221,31 @@ export function Header({ user }: HeaderProps) {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+        </div>
+      </div>
+
+      {/* Strip logo sponsor untuk layar mobile (di desktop tampil di dalam bar) */}
+      <div className="md:hidden border-t">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 py-1.5">
+          {[
+            { src: "/images/kemdikbud.webp", alt: "Kemdikbud" },
+            { src: "/images/diktisaintek.webp", alt: "DIKTISAINTEK" },
+            { src: "/images/bima.webp", alt: "BIMA" },
+            { src: "/images/uniba.webp", alt: "Universitas Bina Bangsa" },
+            { src: "/images/unbaja.webp", alt: "Universitas Banten Jaya" },
+            { src: "/images/smk.webp", alt: "SMK PGRI 3" },
+          ].map((logo) => (
+            <Image
+              key={logo.src}
+              src={logo.src}
+              alt={logo.alt}
+              width={80}
+              height={20}
+              className="shrink-0 opacity-70"
+              style={{ height: "20px", width: "auto" }}
+              unoptimized
+            />
+          ))}
         </div>
       </div>
     </header>

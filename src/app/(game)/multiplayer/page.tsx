@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/layout/Header";
 import { MultiplayerLobbyClient } from "@/components/multiplayer/MultiplayerLobbyClient";
+import { BG } from "@/lib/assets";
 
 export default async function MultiplayerLobbyPage() {
   const supabase = await createClient();
@@ -15,7 +16,12 @@ export default async function MultiplayerLobbyPage() {
     .single();
 
   return (
-    <div className="min-h-screen flex flex-col bg-linear-to-br from-slate-900 via-purple-950 to-indigo-950">
+    <div
+      className="min-h-screen flex flex-col bg-cover bg-center"
+      style={{
+        backgroundImage: `linear-gradient(rgba(2,6,23,0.62), rgba(2,6,23,0.74)), url('${BG.arena}')`,
+      }}
+    >
       <Header
         user={{
           id: user.id,

@@ -1,7 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Binary, Lock, Network, Swords, type LucideIcon } from "lucide-react";
+import {
+  Binary,
+  CheckCircle2,
+  Lock,
+  Network,
+  Swords,
+  type LucideIcon,
+} from "lucide-react";
 import type { MapNode as MapNodeType } from "@/lib/game/world-map-config";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +24,7 @@ interface MapNodeProps {
   isSelected: boolean;
   isCurrent?: boolean;
   isLocked?: boolean;
+  isCompleted?: boolean;
   onClick: () => void;
 }
 
@@ -25,6 +33,7 @@ export function MapNode({
   isSelected,
   isCurrent,
   isLocked = false,
+  isCompleted = false,
   onClick,
 }: MapNodeProps) {
   const Icon = iconMap[node.iconName];
@@ -43,6 +52,7 @@ export function MapNode({
         "absolute -translate-x-1/2 -translate-y-1/2",
         "group flex flex-col items-center gap-2 transition-all duration-200",
         fullyLocked && "cursor-not-allowed opacity-60",
+        isCompleted && !fullyLocked && "opacity-65",
       )}
       style={{
         left: `${node.position.x}%`,
@@ -82,6 +92,9 @@ export function MapNode({
         />
         {isLocked && !fullyLocked && (
           <Lock className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-slate-800 p-0.5 text-amber-400 ring-2 ring-slate-700" />
+        )}
+        {isCompleted && !isLocked && (
+          <CheckCircle2 className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-emerald-600 p-0.5 text-white ring-2 ring-background" />
         )}
       </div>
 

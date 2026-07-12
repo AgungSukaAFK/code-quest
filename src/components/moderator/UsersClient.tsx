@@ -15,22 +15,27 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Check,
   GraduationCap,
   Loader2,
   Pencil,
   Plus,
+  School,
   Search,
   Trash2,
   Upload,
   UserPlus,
+  X,
 } from "lucide-react";
-import type { ManagedUser } from "@/app/(moderator)/moderator/users/page";
+import type {
+  ManagedClass,
+  ManagedUser,
+} from "@/app/(moderator)/moderator/users/page";
 import { ModeratorNav } from "./ModeratorNav";
-
-const CLASSES = ["X TJKT 3"];
 
 interface UsersClientProps {
   users: ManagedUser[];
+  classes: ManagedClass[];
   currentUserId: string;
 }
 
@@ -42,9 +47,11 @@ function formatDate(iso: string) {
   });
 }
 
-export function UsersClient({ users, currentUserId }: UsersClientProps) {
+export function UsersClient({ users, classes, currentUserId }: UsersClientProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
+
+  const classNames = classes.map((c) => c.name);
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "siswa" | "moderator">(
@@ -67,6 +74,16 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
   const [newStudentFullName, setNewStudentFullName] = useState("");
   const [newStudentClass, setNewStudentClass] = useState("");
   const [creatingStudent, setCreatingStudent] = useState(false);
+
+  // Kelola kelas state
+  const [showClasses, setShowClasses] = useState(false);
+  const [newClassName, setNewClassName] = useState("");
+  const [classSaving, setClassSaving] = useState(false);
+  const [editingClassId, setEditingClassId] = useState<string | null>(null);
+  const [editingClassName, setEditingClassName] = useState("");
+  const [confirmDeleteClassId, setConfirmDeleteClassId] = useState<string | null>(
+    null,
+  );
 
   // CSV import state
   const [showImport, setShowImport] = useState(false);
@@ -168,7 +185,7 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
   }
 
   const siswaList = users.filter((u) => u.role === "siswa");
-  const classStats = CLASSES.map((c) => ({
+  const classStats = classNames.map((c) => ({
     name: c,
     count: siswaList.filter((u) => u.class_name === c).length,
   }));
@@ -280,6 +297,80 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
     }
   };
 
+  const handleCreateClass = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const name = newClassName.trim();
+    if (!name) return;
+    setClassSaving(true);
+    try {
+      const res = await fetch("/api/moderator/create-class", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "Gagal menambah kelas.");
+        return;
+      }
+      toast.success(`Kelas "${name}" ditambahkan.`);
+      setNewClassName("");
+      startTransition(() => router.refresh());
+    } catch {
+      toast.error("Terjadi kesalahan.");
+    } finally {
+      setClassSaving(false);
+    }
+  };
+
+  const handleRenameClass = async (id: string) => {
+    const name = editingClassName.trim();
+    if (!name) return;
+    setClassSaving(true);
+    try {
+      const res = await fetch("/api/moderator/update-class", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, name }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "Gagal mengubah kelas.");
+        return;
+      }
+      toast.success("Nama kelas diperbarui.");
+      setEditingClassId(null);
+      startTransition(() => router.refresh());
+    } catch {
+      toast.error("Terjadi kesalahan.");
+    } finally {
+      setClassSaving(false);
+    }
+  };
+
+  const handleDeleteClass = async (id: string) => {
+    setClassSaving(true);
+    try {
+      const res = await fetch("/api/moderator/delete-class", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "Gagal menghapus kelas.");
+        return;
+      }
+      toast.success("Kelas dihapus. Siswa terkait menjadi tanpa kelas.");
+      setConfirmDeleteClassId(null);
+      startTransition(() => router.refresh());
+    } catch {
+      toast.error("Terjadi kesalahan.");
+    } finally {
+      setClassSaving(false);
+    }
+  };
+
   return (
     <main className="container mx-auto max-w-5xl px-4 py-8 space-y-6">
       <ModeratorNav active="users" />
@@ -294,6 +385,10 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowClasses(true)}>
+            <School className="mr-2 h-4 w-4" />
+            Kelola Kelas
+          </Button>
           <Button variant="outline" onClick={() => setShowImport(true)}>
             <Upload className="mr-2 h-4 w-4" />
             Import CSV
@@ -369,7 +464,7 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
           >
             Semua Kelas
           </button>
-          {CLASSES.map((c) => (
+          {classNames.map((c) => (
             <button
               key={c}
               type="button"
@@ -539,7 +634,7 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 <option value="">— Tanpa Kelas —</option>
-                {CLASSES.map((c) => (
+                {classNames.map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>
@@ -666,7 +761,7 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 <option value="">— Pilih Kelas —</option>
-                {CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
+                {classNames.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
 
@@ -803,7 +898,7 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 <option value="">— Tanpa Kelas —</option>
-                {CLASSES.map((c) => (
+                {classNames.map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>
@@ -829,6 +924,135 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+      {/* Kelola kelas dialog */}
+      <Dialog
+        open={showClasses}
+        onOpenChange={(o) => {
+          if (!o) {
+            setShowClasses(false);
+            setEditingClassId(null);
+            setConfirmDeleteClassId(null);
+            setNewClassName("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Kelola Kelas</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <form onSubmit={handleCreateClass} className="flex gap-2">
+              <Input
+                value={newClassName}
+                onChange={(e) => setNewClassName(e.target.value)}
+                placeholder="Nama kelas baru (mis. X TJKT 3)"
+              />
+              <Button
+                type="submit"
+                disabled={classSaving || !newClassName.trim()}
+              >
+                <Plus className="mr-1.5 h-4 w-4" />
+                Tambah
+              </Button>
+            </form>
+
+            <div className="max-h-72 divide-y overflow-y-auto rounded-md border">
+              {classes.length === 0 ? (
+                <p className="px-3 py-8 text-center text-sm text-muted-foreground">
+                  Belum ada kelas. Tambahkan lewat form di atas.
+                </p>
+              ) : (
+                classes.map((c) => {
+                  const count = siswaList.filter(
+                    (u) => u.class_name === c.name,
+                  ).length;
+                  return (
+                    <div
+                      key={c.id}
+                      className="flex items-center gap-2 px-3 py-2"
+                    >
+                      {editingClassId === c.id ? (
+                        <>
+                          <Input
+                            value={editingClassName}
+                            onChange={(e) => setEditingClassName(e.target.value)}
+                            className="h-8 flex-1"
+                            autoFocus
+                          />
+                          <Button
+                            size="sm"
+                            onClick={() => handleRenameClass(c.id)}
+                            disabled={classSaving || !editingClassName.trim()}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setEditingClassId(null)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : confirmDeleteClassId === c.id ? (
+                        <>
+                          <span className="flex-1 text-sm">
+                            Hapus <b>{c.name}</b>? {count} siswa jadi tanpa kelas.
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteClass(c.id)}
+                            disabled={classSaving}
+                          >
+                            Hapus
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setConfirmDeleteClassId(null)}
+                          >
+                            Batal
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <span className="flex-1 text-sm font-medium">
+                            {c.name}
+                          </span>
+                          <Badge variant="secondary">{count} siswa</Badge>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingClassId(c.id);
+                              setEditingClassName(c.name);
+                              setConfirmDeleteClassId(null);
+                            }}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => {
+                              setConfirmDeleteClassId(c.id);
+                              setEditingClassId(null);
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </main>

@@ -10,7 +10,6 @@ import { BooleanPuzzle } from "@/components/puzzle/boolean/BooleanPuzzle";
 import { PuzzleResultModal } from "@/components/puzzle/PuzzleResultModal";
 import { InstructionModal } from "@/components/puzzle/InstructionModal";
 import { RLInsightPanel } from "@/components/rl/RLInsightPanel";
-import { sounds } from "@/lib/sounds";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -28,6 +27,7 @@ import {
   type DialogScene,
 } from "@/lib/narrative/script";
 import { markSceneSeen } from "@/lib/narrative/seen";
+import { useAudioStore } from "@/stores/audioStore";
 
 interface RLUpdateInfo {
   reward: number;
@@ -53,9 +53,10 @@ interface PlayClientProps {
   role: string | null;
   initialUniqueCount?: number;
   hasSeenModuleOpen?: boolean;
+  alreadyCompleted?: boolean;
 }
 
-export function PlayClient({ module, sessionId, userId, avatarSeed, username, role, hasSeenModuleOpen = false }: PlayClientProps) {
+export function PlayClient({ module, sessionId, userId, avatarSeed, username, role, hasSeenModuleOpen = false, alreadyCompleted = false }: PlayClientProps) {
   const isModerator = role === "moderator";
   const router = useRouter();
 
@@ -67,15 +68,8 @@ export function PlayClient({ module, sessionId, userId, avatarSeed, username, ro
   const [showResult, setShowResult] = useState(false);
   const [puzzleRenderKey, setPuzzleRenderKey] = useState(0);
   const [showInstructions, setShowInstructions] = useState(false);
-  const [muted, setMuted] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("cq_sound_muted") === "1";
-  });
-
-  // Sync initial muted state to sounds module
-  useEffect(() => {
-    sounds.muted = muted;
-  }, []);
+  const muted = useAudioStore((s) => s.muted);
+  const toggleMuted = useAudioStore((s) => s.toggleMuted);
 
   const [showRLInsight, setShowRLInsight] = useState(() => {
     if (!isModerator || typeof window === "undefined") return false;
@@ -98,7 +92,9 @@ export function PlayClient({ module, sessionId, userId, avatarSeed, username, ro
     SOAL_PER_MODULE,
     completedPuzzleIds.length + 1,
   );
-  const progressLabel = `Soal ${currentSoalNumber}/${SOAL_PER_MODULE}`;
+  const progressLabel = alreadyCompleted
+    ? "Latihan bebas ∞"
+    : `Soal ${currentSoalNumber}/${SOAL_PER_MODULE}`;
 
   // ── Cutscene / narasi ──────────────────────────────────────
   const prefix = modulePrefix(module.id);
@@ -128,9 +124,14 @@ export function PlayClient({ module, sessionId, userId, avatarSeed, username, ro
 
   useEffect(() => {
     loadNextPuzzle();
-    if (prefix && !hasSeenModuleOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      playScene(`${prefix}_module_open`);
+    if (prefix) {
+      if (alreadyCompleted) {
+        // Modul sudah tuntas → sambutan "latihan bebas".
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        playScene(`${prefix}_replay`);
+      } else if (!hasSeenModuleOpen) {
+        playScene(`${prefix}_module_open`);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -167,7 +168,13 @@ export function PlayClient({ module, sessionId, userId, avatarSeed, username, ro
         body: JSON.stringify({
           module_id: module.id,
           session_id: sessionId,
-          exclude_ids: completedPuzzleIds,
+          // Mode latihan bebas: soal boleh berulang, cukup hindari soal yang
+          // barusan dikerjakan biar tidak nongol dua kali beruntun.
+          exclude_ids: alreadyCompleted
+            ? currentPuzzle
+              ? [currentPuzzle.id]
+              : []
+            : completedPuzzleIds,
         }),
       });
 
@@ -257,6 +264,14 @@ export function PlayClient({ module, sessionId, userId, avatarSeed, username, ro
   };
 
   const handleContinue = () => {
+    // Mode latihan bebas: tanpa tracking & tanpa penutup — lanjut terus.
+    if (alreadyCompleted) {
+      setShowResult(false);
+      setResult(null);
+      loadNextPuzzle();
+      return;
+    }
+
     const newCompleted = currentPuzzle
       ? [...completedPuzzleIds, currentPuzzle.id]
       : completedPuzzleIds;
@@ -290,13 +305,6 @@ export function PlayClient({ module, sessionId, userId, avatarSeed, username, ro
     setResult(null);
     puzzleStartTime.current = Date.now();
     setPuzzleRenderKey((key) => key + 1);
-  };
-
-  const toggleMute = () => {
-    const next = !muted;
-    sounds.muted = next;
-    setMuted(next);
-    localStorage.setItem("cq_sound_muted", next ? "1" : "0");
   };
 
   const handleCloseInstructions = () => {
@@ -355,7 +363,7 @@ export function PlayClient({ module, sessionId, userId, avatarSeed, username, ro
           </span>
           <button
             type="button"
-            onClick={toggleMute}
+            onClick={toggleMuted}
             aria-label={muted ? "Aktifkan suara" : "Matikan suara"}
             className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
           >
