@@ -1,12 +1,14 @@
 # Code Quest — Dokumentasi Sistem
 
-> Dokumen ini menjelaskan keseluruhan sistem **Code Quest** secara penuh dan detail, dari konsep produk, arsitektur, alur permainan, sistem Reinforcement Learning (RL) adaptif, mode multiplayer, sampai skema database. Ditujukan sebagai bahan diskusi agar siapapun (termasuk AI/model lain) bisa memahami project ini secara utuh tanpa perlu membaca seluruh kode.
+> Dokumen ini menjelaskan keseluruhan sistem **Code Quest** secara penuh dan detail, dari konsep produk, arsitektur, alur permainan, sistem narasi/cerita, Reinforcement Learning (RL) adaptif, mode multiplayer, sampai skema database. Ditujukan sebagai bahan diskusi agar siapapun (termasuk AI/model lain) bisa memahami project ini secara utuh tanpa perlu membaca seluruh kode.
 
 ---
 
 ## 1. Ringkasan Produk
 
 **Code Quest** adalah game edukasi berbasis web untuk mengajarkan **Computational Thinking** dan **Logika Boolean** kepada siswa. Keunikan utamanya: tingkat kesulitan soal **diatur secara adaptif** oleh agen **Q-Learning (Reinforcement Learning)** berdasarkan performa tiap siswa, sehingga setiap siswa mendapat tantangan yang sesuai kemampuannya (tidak terlalu mudah, tidak terlalu sulit).
+
+Seluruh gameplay dibungkus **cerita ringan**: dunia bernama **Logikalia** yang kacau akibat gangguan **"The Glitch"**, dipandu NPC **"Sang Kompil"**. Siswa "membetulkan" tiap area dengan menyelesaikan soal (lihat §7).
 
 Saat ini ada **2 modul materi**:
 
@@ -15,7 +17,9 @@ Saat ini ada **2 modul materi**:
 | `M2` | Dekomposisi | `computational_thinking` | Memecah masalah besar menjadi sub-tugas, lalu mengelompokkannya ke kategori/tahap yang benar |
 | `L1` | Logika Boolean | `logic_math` | Operasi AND, OR, NOT, implikasi — melengkapi tabel kebenaran (memakai istilah **B/S**, bukan 0/1) |
 
-Tiga "lokasi" pada world map: **Lembah Dekomposisi (M2)** → **Menara Logika Boolean (L1)** → **Arena Pertempuran (multiplayer)**.
+Tiga "lokasi" pada world map (sekaligus 3 babak cerita): **Lembah Dekomposisi (M2)** → **Menara Logika Boolean (L1)** → **Arena Pertempuran (multiplayer)**.
+
+Ada juga halaman **landing/marketing publik** di `/` (`src/app/page.tsx`) — hero, daftar "world", fitur, cara kerja, penjelasan modul, CTA — diakses tanpa login, terpisah dari area game.
 
 ---
 
@@ -27,10 +31,11 @@ Tiga "lokasi" pada world map: **Lembah Dekomposisi (M2)** → **Menara Logika Bo
 | Bahasa | TypeScript 5 |
 | Styling | Tailwind CSS v4, `tw-animate-css`, shadcn/ui, `@base-ui/react` |
 | Animasi | Framer Motion 12, `canvas-confetti` |
-| State (client) | Zustand 5 (`gameStore`, `userStore`) |
+| State (client) | Zustand 5 (`gameStore`, `userStore`, `audioStore`) |
 | Form & Validasi | React Hook Form 7 + Zod 4 |
 | Drag & Drop | `@dnd-kit/*` (puzzle dekomposisi) |
 | Database & Auth | **Supabase** (Postgres + Auth + Realtime + RLS) via `@supabase/ssr` & `@supabase/supabase-js` |
+| Audio | `HTMLAudioElement` custom (BGM per rute + ducking + stinger), lihat §7.3 |
 | Notifikasi UI | `sonner` |
 | Ikon | `lucide-react` |
 | Avatar | DiceBear (lewat `avatar_seed`) |
@@ -49,20 +54,21 @@ App Router dengan **route groups**:
 
 ```
 src/app/
-├── (auth)/login/              # Halaman login (siswa via NISN+Nama, moderator via email)
+├── page.tsx                   # Landing page publik (hero, worlds, fitur, cara kerja, cta)
+├── (auth)/login/               # Halaman login (siswa via NISN+Nama, moderator via email)
 ├── (game)/                    # Area utama pemain (dilindungi auth)
-│   ├── layout.tsx
-│   ├── world-map/             # Peta dunia: pilih modul
-│   ├── play/[moduleId]/       # Loop bermain puzzle adaptif (RL)
-│   ├── multiplayer/           # Lobi multiplayer
-│   ├── multiplayer/[code]/    # Ruang/room multiplayer (realtime)
+│   ├── layout.tsx              # Memasang <AudioManager /> (musik latar global)
+│   ├── world-map/             # Peta dunia: pilih modul + cutscene intro dunia
+│   ├── play/[moduleId]/       # Loop bermain puzzle adaptif (RL) + cutscene per-modul
+│   ├── multiplayer/           # Lobi multiplayer + cutscene intro arena
+│   ├── multiplayer/[code]/    # Ruang/room multiplayer (realtime) + cutscene kemenangan
 │   ├── leaderboard/           # Papan peringkat
 │   ├── profile/               # Profil & progress siswa
 │   ├── rl-dashboard/          # Visualisasi Q-Table & event RL (untuk transparansi/penelitian)
 │   └── rl-dashboard/simulation/  # Simulator RL (uji kebijakan tanpa siswa nyata)
 ├── (moderator)/moderator/     # Panel moderator/guru
 │   ├── puzzles/               # CRUD soal
-│   └── users/                 # Kelola siswa & moderator
+│   └── users/                 # Kelola siswa, moderator & daftar kelas
 └── api/                       # Route handler (lihat §4)
 ```
 
@@ -95,10 +101,10 @@ src/app/
 | `/api/multiplayer/answer` | Pemain submit jawaban; hitung skor berbasis kecepatan |
 
 ### Moderator (butuh service-role, validasi peran moderator)
-`create-moderator`, `create-student`, `import-students` (impor massal), `update-user`, `delete-user`, `upsert-puzzle`, `delete-puzzle`.
+`create-moderator`, `create-student`, `import-students` (impor massal), `update-user`, `delete-user`, `upsert-puzzle`, `delete-puzzle`, dan CRUD kelas: `create-class`, `update-class`, `delete-class` (lihat §10.10 tabel `classes`).
 
 ### Auth & RL lainnya
-- `/api/auth/student-login` — login siswa via **NISN + Nama Lengkap** (lihat §8)
+- `/api/auth/student-login` — login siswa via **NISN + Nama Lengkap** (lihat §9)
 - `/api/rl/simulate` — jalankan simulasi RL untuk dashboard penelitian
 
 ---
@@ -220,9 +226,63 @@ Setiap keputusan & update RL dicatat detail di tabel `rl_events` (state sebelum/
 
 ---
 
-## 7. Mode Multiplayer (Arena)
+## 7. Sistem Narasi (Story) & Audio
 
-Kuis real-time **10 soal pilihan ganda** (campuran Dekomposisi + Boolean), bergaya Kahoot. Berbasis **Supabase Realtime** (tabel di-`REPLICA IDENTITY FULL` dan ditambahkan ke `supabase_realtime` publication).
+Gameplay dibungkus cerita ringan bergaya visual-novel: dunia **Logikalia**, NPC pemandu **Sang Kompil**, dan antagonis **The Glitch** yang mengacaukan tiap area. Tiap modul = 1 babak cerita dengan sub-cutscene di sela soal.
+
+### 7.1 Naskah — `src/lib/narrative/script.ts`
+- Naskah lengkap (versi prosa) ada di `/naskah-cerita-codequest.md` di root repo; `script.ts` adalah versi ter-strukturkan sebagai data.
+- `NARRATIVE_SCRIPT: Record<string, DialogScene>` — kamus scene by id. Tiap `DialogScene` berisi:
+  - `trigger`: `"once"` (checkpoint besar, di-persist ke `profiles`, tidak diulang) atau `"per_session"` (transisi ringan, tampil tiap sesi main tanpa disimpan).
+  - `persistColumn?`: kolom boolean di `profiles` yang di-set `true` saat scene `"once"` selesai (lihat `NarrativeColumn`, §10.1).
+  - `background?` / `figure?`: URL gambar latar & karakter tambahan (The Glitch) khusus scene itu.
+  - `lines[]`: `{ speaker, text, stage? }` — `stage` adalah catatan panggung italic opsional.
+- `modulePrefix(moduleId)` memetakan `"M2"→"m2"`, `"L1"→"l1"` — dipakai membentuk id scene per modul (`${prefix}_module_open`, `${prefix}_soal2`, dst).
+
+**Daftar scene per babak:**
+
+| Babak | Scene | Trigger | Kapan tampil |
+|-------|-------|---------|---------------|
+| Dunia | `intro_world` | once | Pertama kali mendarat di `/world-map` |
+| M2 | `m2_module_open` | once | Pertama kali masuk `/play/M2` (belum selesai modul) |
+| M2 | `m2_soal2`, `m2_soal3` | per_session | Transisi sebelum soal ke-2 / ke-3 |
+| M2 | `m2_module_close` | once | Setelah soal ke-3 modul M2 selesai |
+| M2 | `m2_replay` | per_session | Masuk `/play/M2` setelah modul sudah pernah tuntas (mode latihan bebas) |
+| L1 | `l1_module_open`, `l1_soal2`, `l1_soal3`, `l1_module_close`, `l1_replay` | (sama polanya dengan M2) | |
+| Arena | `arena_intro` | once | Pertama kali buka `/multiplayer` (lobi) |
+| Arena | `arena_room_start` | per_session | *(didefinisikan di naskah, belum dipanggil di UI manapun — dead scene saat ini)* |
+| Arena | `arena_victory` | per_session | Room multiplayer selesai (`MultiplayerRoomClient`) |
+
+### 7.2 Pemicu di UI
+- **`WorldMapClient`** (`src/components/game/WorldMapClient.tsx`): jika prop `hasSeenIntroWorld` false → set `activeScene = intro_world` saat mount.
+- **`PlayClient`** (`src/components/game/PlayClient.tsx`): pada mount, jika `alreadyCompleted` → putar `${prefix}_replay`; else jika `!hasSeenModuleOpen` → putar `${prefix}_module_open`. Setelah tiap soal (`handleContinue`): jika soal berikut ke-2/ke-3 → putar `${prefix}_soal{N}`; setelah soal ke-3 (modul selesai) → putar `${prefix}_module_close`, baru redirect ke `/world-map?completed=...` setelah cutscene selesai (`playScene(id, afterCallback)`).
+- **`MultiplayerLobbyClient`**: jika `!hasSeenArenaIntro` → putar `arena_intro` saat mount.
+- **`MultiplayerRoomClient`**: saat room selesai (`status === "finished"`) → putar `arena_victory` (dan trigger stinger kemenangan lewat `audioStore.playStinger`, lihat §7.3).
+- Semua pemicu memanggil `markSceneSeen(userId, persistColumn)` (`src/lib/narrative/seen.ts`) saat scene `"once"` selesai — update `profiles` fire-and-forget (kegagalan tidak mengganggu alur main).
+
+### 7.3 Komponen tampilan — `DialogBox` / `DialogBoxLayer` (`src/components/narrative/DialogBox.tsx`)
+- Overlay full-screen bergaya visual novel: background scene (atau gelap polos), gambar **Sang Kompil** (kiri, di-mirror) & **The Glitch** (kanan, muncul kalau `scene.figure` ada), kartu dialog di bawah dengan efek **mesin ketik** (`TYPE_SPEED_MS = 22`).
+- Klik/​tap di mana saja atau tombol **Lanjut** → percepat ketikan baris aktif, lalu lanjut baris berikutnya; di baris terakhir tombol berubah jadi **Mulai** dan memanggil `onComplete`. Tombol **Lewati** langsung `onComplete`.
+- Karakter yang sedang tidak bicara jadi grayscale & mengecil/transparan; yang bicara menyala & sedikit membesar (dibedakan lewat `isGlitchSpeaking`).
+- Selama cutscene tampil, musik latar di-duck (dipelankan) lewat `audioStore.pushDuck()`/`popDuck()` (efek di `useEffect` mount/unmount `DialogBox`).
+- `DialogBoxLayer` membungkus dengan `AnimatePresence` dan `key={scene.id}` supaya state internal (index baris) reset otomatis tiap ganti scene.
+
+### 7.4 Audio — `audioStore` + `AudioManager`
+- **`src/stores/audioStore.ts`** (Zustand): `muted` (persist ke `localStorage` key `cq_sound_muted`), `duckCount` (>0 = musik diredam, dipakai cutscene), `stinger` (URL one-shot yang minta diputar, mis. kemenangan multiplayer), plus actions terkait.
+- **`src/components/audio/AudioManager.tsx`** (dipasang sekali di `(game)/layout.tsx`, di luar konten yang di-remount per navigasi, supaya musik menyambung antar-halaman):
+  - `trackForPath(pathname)` memetakan rute → track BGM: `/world-map`→worldmap, `/play/L1`→menara, `/play/M2` (atau `/play/*` lain)→lembah, `/multiplayer`→arena.
+  - `applyPlayback()` = satu sumber kebenaran: menyamakan pemutaran (play/pause/volume) dengan state terkini (track sesuai rute, mute, duck) — dipanggil ulang tiap kali salah satunya berubah.
+  - Fade volume halus (`fadeTo`, 12 step × 25 ms) saat ganti track, mute, atau duck/undock.
+  - Autoplay browser diblokir sebelum interaksi user → listener `pointerdown`/`keydown`/`touchstart` persisten yang me-retry `applyPlayback()`.
+  - Stinger one-shot (`stinger` di store): musik latar di-fade ke 0 & pause, stinger diputar sekali, lalu `clearStinger()`.
+- **Aset** (`src/lib/assets.ts`): `BG` (background per lokasi/cutscene), `CHAR` (`kompil`, `glitch`), `BGM` (`worldmap`, `lembah`, `menara`, `arena`, `dialog`, `victory`) — semua path relatif ke `public/`.
+- Toggle mute tersedia di `Header` (area game) dan di toolbar `PlayClient` (ikon speaker).
+
+---
+
+## 8. Mode Multiplayer (Arena)
+
+Kuis real-time **10 soal pilihan ganda** (campuran Dekomposisi + Boolean), bergaya Kahoot. Berbasis **Supabase Realtime** (tabel di-`REPLICA IDENTITY FULL` dan ditambahkan ke `supabase_realtime` publication). Dibingkai cerita sebagai "pertempuran final melawan The Glitch" (lihat §7).
 
 **Alur:**
 1. Host `create` room → dapat **kode unik** (8 char), status `waiting`.
@@ -230,7 +290,7 @@ Kuis real-time **10 soal pilihan ganda** (campuran Dekomposisi + Boolean), berga
 3. Host `start` → status `playing`, generate 10 soal (`generateQuestionsFromPuzzles` di `question-generator.ts`: ambil ~5 soal dekomposisi + ~5 boolean, di-*interleave*, lalu pilih 10).
 4. Soal ditampilkan satu per satu; `current_question_index` & `question_shown_at` dikontrol host; timer 15–60 detik (default 20).
 5. Pemain `answer` → skor dihitung berbasis kecepatan: **benar = `round(1000 − 500 × ratio)`** (1000 poin instan → 500 poin saat mepet timer); jawaban telat/salah = 0. Satu jawaban per soal (unik per `question_id` + `player_id`).
-6. Setelah 10 soal → status `finished`, tampil podium (`FinalPodium`).
+6. Setelah 10 soal → status `finished`, cutscene `arena_victory` tampil, lalu podium (`FinalPodium`).
 
 **Generasi soal MCQ** (`question-generator.ts`):
 - Dekomposisi: *"Langkah X termasuk ke tahap apa?"* + distraktor (kategori lain + dummy).
@@ -238,7 +298,7 @@ Kuis real-time **10 soal pilihan ganda** (campuran Dekomposisi + Boolean), berga
 
 ---
 
-## 8. Autentikasi & Peran
+## 9. Autentikasi & Peran
 
 Dua jalur login (Supabase Auth, akun email/password di belakang layar):
 
@@ -246,35 +306,41 @@ Dua jalur login (Supabase Auth, akun email/password di belakang layar):
    - Cari profil dengan `nisn` (case-insensitive) & `role = 'siswa'`.
    - Cocokkan `display_name` (dinormalisasi) dengan nama yang diinput.
    - Bangun email deterministik `{nisn}@students.codequest.local` & password deterministik `Siswa-{nisn}-{STUDENT_AUTH_SECRET}`, lalu `signInWithPassword`.
-   - Akun siswa **disediakan oleh moderator** (provisioning), siswa tidak mendaftar sendiri.
+   - Akun siswa **disediakan oleh moderator** (provisioning), siswa tidak mendaftar sendiri. Kelas (`class_name`) dipilih dari daftar tabel `classes` (§10.10) saat provisioning.
 2. **Moderator/Guru** — login email+password biasa; mengakses panel `(moderator)`.
 
 `profiles` punya kolom `role` (`'siswa'` / `'moderator'`) yang membedakan akses. Trigger `handle_new_user` otomatis membuat baris `profiles` saat user `auth.users` dibuat.
 
 ---
 
-## 9. Skema Database (Supabase / Postgres)
+## 10. Skema Database (Supabase / Postgres)
 
 Migrasi berurutan di `supabase/migrations/`. RLS (Row Level Security) aktif di semua tabel.
 
-### 9.1 `profiles` — extend `auth.users`
+### 10.1 `profiles` — extend `auth.users`
 | Kolom | Tipe | Keterangan |
 |-------|------|-----------|
 | `id` | UUID PK | FK → `auth.users(id)` |
 | `username` | TEXT UNIQUE | |
 | `display_name` | TEXT | dicocokkan saat login siswa |
 | `avatar_seed` | TEXT | seed DiceBear |
-| `class_name` | TEXT | kelas siswa |
+| `class_name` | TEXT | kelas siswa (nilai bebas, biasanya diambil dari `classes.name`) |
 | `nisn` | TEXT | unik (case-insensitive, partial index utk non-null) |
 | `role` | TEXT | `'siswa'` / `'moderator'` |
+| `has_seen_intro_world` | BOOLEAN | checkpoint cutscene intro dunia (§7) |
+| `has_seen_m2_open` | BOOLEAN | checkpoint cutscene buka modul M2 |
+| `has_completed_m2` | BOOLEAN | checkpoint cutscene modul M2 selesai (dan penentu status "done" di world map) |
+| `has_seen_l1_open` | BOOLEAN | checkpoint cutscene buka modul L1 |
+| `has_completed_l1` | BOOLEAN | checkpoint cutscene modul L1 selesai |
+| `has_seen_arena_intro` | BOOLEAN | checkpoint cutscene intro arena |
 | `created_at` | TIMESTAMPTZ | |
 
 RLS: profil hanya bisa dilihat/diupdate pemiliknya (`auth.uid() = id`).
 
-### 9.2 `modules` — daftar modul materi
+### 10.2 `modules` — daftar modul materi
 `id` (TEXT PK, mis. `M2`/`L1`), `name`, `type`, `description`, `icon_name`, `display_order`. Seed: M2 & L1. Bisa dibaca semua orang.
 
-### 9.3 `puzzles` — bank soal
+### 10.3 `puzzles` — bank soal
 | Kolom | Tipe |
 |-------|------|
 | `id` | TEXT PK (mis. `M2-D1-001`, `L1-T3-001`) |
@@ -290,10 +356,10 @@ RLS: profil hanya bisa dilihat/diupdate pemiliknya (`auth.uid() = id`).
 
 Index: `(module_id, difficulty)`. Seed: `003` (dekomposisi), `005` (boolean dasar AND/OR/NOT), `006` (implikasi). RLS: terbaca oleh user terautentikasi.
 
-### 9.4 `sessions` — sesi bermain per modul
+### 10.4 `sessions` — sesi bermain per modul
 `id` UUID PK, `user_id` FK, `module_id` FK, `started_at`, `ended_at`, `total_attempts`, `total_correct`. RLS per pemilik. Fungsi RPC `increment_session_correct` & `increment_session_attempts` (`004_session_helpers.sql`) memperbarui agregat.
 
-### 9.5 `attempts` — tiap percobaan soal
+### 10.5 `attempts` — tiap percobaan soal
 | Kolom | Keterangan |
 |-------|-----------|
 | `id` UUID PK | |
@@ -312,10 +378,10 @@ Index: `(module_id, difficulty)`. Seed: `003` (dekomposisi), `005` (boolean dasa
 
 Index: `(user_id)`, `(session_id)`. RLS per pemilik.
 
-### 9.6 `student_skills` — estimasi skill per (siswa, modul)
+### 10.6 `student_skills` — estimasi skill per (siswa, modul)
 `user_id` + `module_id` (UNIQUE), `skill_level` FLOAT 0–1 (default 0.5, CHECK), `updated_at`. Dipakai RL sebagai input state. RLS per pemilik.
 
-### 9.7 `q_tables` — Q-Table per modul (kebijakan RL)
+### 10.7 `q_tables` — Q-Table per modul (kebijakan RL)
 | Kolom | Default |
 |-------|---------|
 | `module_id` TEXT UNIQUE FK | |
@@ -327,10 +393,10 @@ Index: `(user_id)`, `(session_id)`. RLS per pemilik.
 
 Seed: baris untuk M2 & L1. RLS: **SELECT** untuk semua user terautentikasi (transparansi dashboard); **penulisan** lewat admin client (service-role).
 
-### 9.8 `rl_events` — log keputusan & update RL (penelitian)
+### 10.8 `rl_events` — log keputusan & update RL (penelitian)
 Menyimpan: `user_id`, `module_id`, `attempt_id`, `state_before`/`state_key_before`, `action_taken`, `was_exploration`, `state_after`/`state_key_after`, `reward`, `q_value_before`, `q_value_after`, `td_error`, `epsilon_at_decision`, `created_at`. Index: user, module, attempt. RLS: user lihat event sendiri.
 
-### 9.9 Tabel Multiplayer (`008_multiplayer.sql`)
+### 10.9 Tabel Multiplayer (`008_multiplayer.sql`)
 - **`multiplayer_rooms`** — `code` (UNIQUE), `host_id`, `host_name`, `status` (`waiting`/`playing`/`finished`), `difficulty` (`easy`/`medium`/`hard`/`random`), `timer_seconds` (15–60), `current_question_index`, `question_shown_at`, `max_players`, timestamps.
 - **`room_players`** — `room_id`, `user_id` (UNIQUE bersama room), `display_name`, `avatar_seed`, `score`, `is_host`, `joined_at`.
 - **`room_questions`** — `room_id`, `question_order` (UNIQUE bersama room), `puzzle_id`, `puzzle_type`, `question_text`, `options` JSONB, `correct_option_id`.
@@ -338,7 +404,10 @@ Menyimpan: `user_id`, `module_id`, `attempt_id`, `state_before`/`state_key_befor
 
 RLS: SELECT untuk user terautentikasi; INSERT/UPDATE/DELETE dibatasi host/pemilik. Ketiga tabel (rooms, players, answers) `REPLICA IDENTITY FULL` & masuk publication realtime.
 
-### 9.10 Diagram Relasi (ringkas)
+### 10.10 `classes` — daftar kelas (`010_classes.sql`)
+`id` UUID PK, `name` TEXT UNIQUE NOT NULL, `created_at`. Sebelumnya `class_name` di `profiles` hanya teks bebas & daftar kelas hardcoded di UI; tabel ini membuatnya bisa dikelola moderator (tambah/ubah/hapus lewat `/api/moderator/*-class`). Relasi ke `profiles.class_name` **berbasis nama** (bukan FK sungguhan) — rename kelas di-cascade manual via API update. RLS: SELECT untuk semua user terautentikasi (dropdown), tulis hanya lewat service role. Seed: kelas unik yang sudah dipakai siswa + default `"X TJKT 3"`.
+
+### 10.11 Diagram Relasi (ringkas)
 ```
 auth.users ─1:1─ profiles
 modules ─1:N─ puzzles
@@ -348,15 +417,19 @@ modules ─1:1─ q_tables
 multiplayer_rooms ─1:N─ room_players
 multiplayer_rooms ─1:N─ room_questions ─1:N─ room_answers
 room_players ─1:N─ room_answers
+classes ···(by name, bukan FK)···> profiles.class_name
 ```
 
 ---
 
-## 10. Alur End-to-End (Single Player)
+## 11. Alur End-to-End (Single Player)
 
 ```
 1. Siswa login (NISN+Nama) → middleware verifikasi sesi → /world-map
+   → jika has_seen_intro_world = false: cutscene `intro_world` (sekali seumur akun)
 2. Pilih modul (mis. L1) → /play/L1
+   → jika modul sudah pernah tuntas: cutscene `l1_replay` (latihan bebas, soal random tanpa batas)
+   → else jika has_seen_l1_open = false: cutscene `l1_module_open`
 3. Client POST /api/puzzle/next { module_id, exclude_ids }
      → cold-start? difficulty 2 : buildStudentState → agent.selectAction (ε-greedy)
      → kembalikan puzzle (sesuai rentang difficulty dari action) + rl_decision + state
@@ -367,18 +440,23 @@ room_players ─1:N─ room_answers
      → update skill → hitung reward → agent.update + decayEpsilon → simpan q_tables
      → catat rl_events
      → kembalikan result + rl_update (reward, td_error, q sebelum/sesudah)
-6. Tampilkan hasil/feedback → ulang ke langkah 3 untuk soal berikutnya
+6. Tampilkan hasil/feedback → lanjut soal berikutnya
+     → sebelum soal ke-2/ke-3: cutscene transisi singkat (`l1_soal2`/`l1_soal3`)
+     → setelah soal ke-3 (modul tuntas): cutscene `l1_module_close` → redirect /world-map?completed=L1
+7. Setelah M2 & L1 tuntas → node ARENA terbuka di world map → /multiplayer
+     → pertama kali: cutscene `arena_intro`; setelah room selesai: cutscene `arena_victory`
 ```
 
 ---
 
-## 11. Catatan & Konvensi Penting
+## 12. Catatan & Konvensi Penting
 
 - **Next.js 16 berbeda** dari versi yang umum diketahui — wajib cek `node_modules/next/dist/docs/` sebelum menulis kode baru (lihat `AGENTS.md`).
 - **Istilah Boolean memakai B/S** (Benar/Salah), bukan 0/1, sesuai arahan dosen. UI tabel kebenaran sudah mengikuti; teks penjelasan & soal multiplayer masih `TRUE/FALSE` (kandidat penyeragaman).
-- **Belum ada alur cerita/narasi** — game baru memberi tema lokasi pada world map. Ini revisi yang sedang dipertimbangkan (menambah framing cerita agar pengalaman bermain lebih terasa).
+- **Sistem narasi/cerita sudah diimplementasikan penuh** (§7) — dunia Logikalia, Sang Kompil vs The Glitch, cutscene per checkpoint, musik latar per lokasi dengan ducking saat dialog. Scene `arena_room_start` didefinisikan di naskah tapi **belum dipanggil di UI manapun** — kandidat untuk disambungkan (mis. saat host menekan "mulai game") atau dihapus bila memang tidak dipakai.
 - Penulisan ke `q_tables` & `rl_events` memakai **admin client** (service-role) karena bukan operasi atas nama satu user; sisanya menghormati RLS per user.
 - Satu Q-Table per modul = **kebijakan global** yang belajar dari seluruh siswa (bukan per-siswa). State-lah yang mempersonalisasi keputusan untuk tiap siswa.
+- Relasi `classes` ↔ `profiles.class_name` berbasis **nama teks**, bukan foreign key — konsisten dengan pola lama tapi rawan mismatch bila nama kelas diubah tanpa lewat API `update-class`.
 
 ---
 
