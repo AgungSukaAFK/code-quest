@@ -158,7 +158,7 @@ export function PlayClient({ module, sessionId, userId, avatarSeed, username, ro
     return () => window.removeEventListener("keydown", handleShortcut);
   }, [isModerator]);
 
-  async function loadNextPuzzle() {
+  async function loadNextPuzzle(excludeOverride?: string[]) {
     setLoading(true);
 
     try {
@@ -170,11 +170,13 @@ export function PlayClient({ module, sessionId, userId, avatarSeed, username, ro
           session_id: sessionId,
           // Mode latihan bebas: soal boleh berulang, cukup hindari soal yang
           // barusan dikerjakan biar tidak nongol dua kali beruntun.
+          // `excludeOverride` dipakai saat pemanggil sudah tahu daftar terbaru
+          // (state `completedPuzzleIds` belum ke-flush di render yang sama).
           exclude_ids: alreadyCompleted
             ? currentPuzzle
               ? [currentPuzzle.id]
               : []
-            : completedPuzzleIds,
+            : (excludeOverride ?? completedPuzzleIds),
         }),
       });
 
@@ -272,15 +274,21 @@ export function PlayClient({ module, sessionId, userId, avatarSeed, username, ro
       return;
     }
 
+    // Set dedupe: jaga-jaga andai soal yang sama sempat terpilih ulang, supaya
+    // "3 soal" di sini selalu berarti 3 soal BERBEDA — selaras dengan hitungan
+    // distinct puzzle_id di server (world-map & play page), yang menentukan
+    // status selesai modul. Sebelumnya count ini bisa lebih besar dari jumlah
+    // soal unik yang benar-benar tersimpan, sehingga modul terasa "selesai" di
+    // client tapi status di world map masih belum (bug).
     const newCompleted = currentPuzzle
-      ? [...completedPuzzleIds, currentPuzzle.id]
+      ? Array.from(new Set([...completedPuzzleIds, currentPuzzle.id]))
       : completedPuzzleIds;
 
     setCompletedPuzzleIds(newCompleted);
     setShowResult(false);
     setResult(null);
 
-    // Sudah 3 soal → tutup modul (cutscene), lalu kembali ke peta.
+    // Sudah 3 soal berbeda → tutup modul (cutscene), lalu kembali ke peta.
     if (newCompleted.length >= SOAL_PER_MODULE) {
       const goToMap = () =>
         router.push(`/world-map?completed=${module.id}`);
@@ -297,7 +305,10 @@ export function PlayClient({ module, sessionId, userId, avatarSeed, username, ro
     if (prefix) {
       playScene(`${prefix}_soal${upcomingSoal}`);
     }
-    loadNextPuzzle();
+    // Kirim daftar exclude terbaru langsung — state `completedPuzzleIds` belum
+    // ke-flush di render ini, jadi kalau dibaca dari closure/state akan basi
+    // dan bisa membuat soal berikutnya mengulang soal yang barusan dikerjakan.
+    loadNextPuzzle(newCompleted);
   };
 
   const handleRetry = () => {
