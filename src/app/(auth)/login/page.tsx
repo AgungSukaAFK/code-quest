@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { LinkImage } from "@/components/ui/link-image";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -79,6 +80,45 @@ export default function LoginPage() {
     router.refresh();
     setLoading(false);
   };
+
+  const imgData = [
+    {
+      id: 1,
+      src: "/images/kemdikbud.webp",
+      alt: "Kementerian Pendidikan, Kebudayaan, Riset, dan Teknologi",
+      link: "https://kemdiktisaintek.go.id",
+    },
+    {
+      id: 2,
+      src: "/images/diktisaintek.webp",
+      alt: "DIKTISAINTEK",
+      link: "https://dikti.kemdiktisaintek.go.id/",
+    },
+    {
+      id: 3,
+      src: "/images/bima.webp",
+      alt: "BIMA",
+      link: "https://bima.kemdiktisaintek.go.id/",
+    },
+    {
+      id: 4,
+      src: "/images/uniba.webp",
+      alt: "Universitas Bina Bangsa",
+      link: "https://binabangsa.ac.id"
+    },
+    {
+      id: 5,
+      src: "/images/unbaja.webp",
+      alt: "Universitas Banten Jaya",
+      link: "https://unbaja.ac.id"
+    },
+    {
+      id: 6,
+      src: "/images/smk.webp",
+      alt: "SMK PGRI 3",
+      link: "https://www.smkpgri3kotaserang.sch.id/"
+    },
+  ];
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4 bg-linear-to-br from-slate-50 to-blue-50">
@@ -197,54 +237,18 @@ export default function LoginPage() {
             Didukung oleh
           </p>
           <div className="flex items-center justify-center gap-3 flex-nowrap">
-            <Image
-              src="/images/kemdikbud.webp"
-              alt="Kementerian Pendidikan, Kebudayaan, Riset, dan Teknologi"
-              width={120}
-              height={44}
-              style={{ height: "36px", width: "auto" }}
-              unoptimized
-            />
-            <Image
-              src="/images/diktisaintek.webp"
-              alt="DIKTISAINTEK"
-              width={120}
-              height={44}
-              style={{ height: "36px", width: "auto" }}
-              unoptimized
-            />
-            <Image
-              src="/images/bima.webp"
-              alt="BIMA"
-              width={120}
-              height={44}
-              style={{ height: "36px", width: "auto" }}
-              unoptimized
-            />
-            <Image
-              src="/images/uniba.webp"
-              alt="Universitas Bina Bangsa"
-              width={120}
-              height={44}
-              style={{ height: "36px", width: "auto" }}
-              unoptimized
-            />
-            <Image
-              src="/images/unbaja.webp"
-              alt="Universitas Banten Jaya"
-              width={120}
-              height={44}
-              style={{ height: "36px", width: "auto" }}
-              unoptimized
-            />
-            <Image
-              src="/images/smk.webp"
-              alt="SMK PGRI 3"
-              width={120}
-              height={44}
-              style={{ height: "36px", width: "auto" }}
-              unoptimized
-            />
+            {imgData.map((img) => (
+              <LinkImage
+                key={img.id}
+                link={img.link}
+                src={img.src}
+                alt={img.alt}
+                width={120}
+                height={44}
+                style={{ height: "36px", width: "auto" }}
+                unoptimized
+              />
+            ))}
           </div>
         </div>
       </div>
