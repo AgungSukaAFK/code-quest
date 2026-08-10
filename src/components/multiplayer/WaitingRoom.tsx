@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Copy, Check, Crown, Loader2, Users, Swords, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { sounds } from "@/lib/sounds";
 import type { MultiplayerRoom, RoomPlayer } from "@/types/multiplayer";
 
 interface Props {
@@ -51,6 +52,7 @@ export function WaitingRoom({ room, players, isHost, currentPlayerId }: Props) {
   }
 
   async function handleStart() {
+    sounds.click();
     setStarting(true);
     try {
       const res = await fetch("/api/multiplayer/start", {

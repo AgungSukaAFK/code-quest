@@ -12,6 +12,8 @@ import type {
   TruthTableContent,
 } from "@/types/puzzle";
 
+const ACTIVE_MODULE_IDS = ["L1"];
+
 type PuzzleRow = {
   id: string;
   type: string;
@@ -71,7 +73,11 @@ export async function POST(request: NextRequest) {
       .eq("id", puzzle_id)
       .single<PuzzleRow>();
 
-    if (puzzleError || !puzzle) {
+    if (
+      puzzleError ||
+      !puzzle ||
+      !ACTIVE_MODULE_IDS.includes(puzzle.module_id)
+    ) {
       return NextResponse.json({ error: "Puzzle not found" }, { status: 404 });
     }
 
@@ -285,13 +291,6 @@ function toAction(rawAction: number | undefined, difficulty: number): RLAction {
 }
 
 function validateAnswer(puzzle: PuzzleRow, userAnswer: unknown): PuzzleResult {
-  if (puzzle.type === "decomposition_sort") {
-    return validateDecompositionSort(
-      puzzle.content,
-      userAnswer as { mapping?: Record<string, string> },
-    );
-  }
-
   if (puzzle.type === "truth_table") {
     return evaluateTruthTable(
       puzzle.content as unknown as TruthTableContent,
@@ -305,50 +304,6 @@ function validateAnswer(puzzle: PuzzleRow, userAnswer: unknown): PuzzleResult {
     total_count: 0,
     partial_score: 0,
     feedback: "Unknown puzzle type",
-  };
-}
-
-function validateDecompositionSort(
-  content: Record<string, unknown>,
-  userAnswer: { mapping?: Record<string, string> },
-): PuzzleResult {
-  const correctMapping =
-    (content.correct_mapping as Record<string, string> | undefined) ?? {};
-  const userMapping = userAnswer.mapping ?? {};
-
-  let correctCount = 0;
-  const totalCount = Object.keys(correctMapping).length;
-  const incorrectTasks: string[] = [];
-
-  for (const [taskId, correctCategory] of Object.entries(correctMapping)) {
-    if (userMapping[taskId] === correctCategory) {
-      correctCount += 1;
-    } else {
-      incorrectTasks.push(taskId);
-    }
-  }
-
-  const partialScore = totalCount > 0 ? correctCount / totalCount : 0;
-  const solved = partialScore === 1;
-
-  let feedback = "";
-  if (solved) {
-    feedback = "Sempurna! Semua task ada di kategori yang tepat.";
-  } else if (partialScore >= 0.7) {
-    feedback = `Hampir! ${correctCount}/${totalCount} benar. Cek lagi yang masih salah.`;
-  } else if (partialScore >= 0.4) {
-    feedback = `Lumayan, tapi masih perlu diperhatikan. ${correctCount}/${totalCount} benar.`;
-  } else {
-    feedback = `Belum tepat. Coba pikirkan lagi tahapan setiap task. ${correctCount}/${totalCount} benar.`;
-  }
-
-  return {
-    solved,
-    correct_count: correctCount,
-    total_count: totalCount,
-    partial_score: partialScore,
-    feedback,
-    incorrect_tasks: incorrectTasks,
   };
 }
 

@@ -9,9 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { Difficulty } from "@/types/multiplayer";
-import { DialogBoxLayer } from "@/components/narrative/DialogBox";
-import { NARRATIVE_SCRIPT, type DialogScene } from "@/lib/narrative/script";
-import { markSceneSeen } from "@/lib/narrative/seen";
+import { sounds } from "@/lib/sounds";
 
 const INSTRUCTIONS = [
   {
@@ -19,7 +17,7 @@ const INSTRUCTIONS = [
     color: "text-purple-400",
     bg: "bg-purple-500/15",
     title: "10 Soal Pilihan Ganda",
-    desc: "Campuran soal Dekomposisi dan Logika Boolean dari berbagai tingkat kesulitan.",
+    desc: "Soal Logika Boolean dari berbagai tingkat kesulitan.",
   },
   {
     icon: Clock,
@@ -113,10 +111,8 @@ function InstructionsModal({ onClose }: { onClose: () => void }) {
 }
 
 interface Props {
-  userId: string;
   displayName: string;
   avatarSeed: string | null;
-  hasSeenArenaIntro?: boolean;
 }
 
 const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; desc: string; color: string }[] = [
@@ -128,7 +124,7 @@ const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; desc: string; colo
 
 type View = "home" | "create" | "join";
 
-export function MultiplayerLobbyClient({ userId, displayName, avatarSeed, hasSeenArenaIntro = false }: Props) {
+export function MultiplayerLobbyClient({ displayName, avatarSeed }: Props) {
   const router = useRouter();
   const [view, setView] = useState<View>("home");
   const [difficulty, setDifficulty] = useState<Difficulty>("random");
@@ -136,25 +132,6 @@ export function MultiplayerLobbyClient({ userId, displayName, avatarSeed, hasSee
   const [joinCode, setJoinCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
-
-  // Cutscene intro Arena (sekali tampil).
-  const [activeScene, setActiveScene] = useState<DialogScene | null>(null);
-
-  useEffect(() => {
-    if (!hasSeenArenaIntro) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setActiveScene(NARRATIVE_SCRIPT.arena_intro);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function handleSceneComplete() {
-    const scene = activeScene;
-    setActiveScene(null);
-    if (scene?.persistColumn) {
-      void markSceneSeen(userId, scene.persistColumn);
-    }
-  }
 
   useEffect(() => {
     const seen = localStorage.getItem("mp_instructions_seen");
@@ -167,6 +144,7 @@ export function MultiplayerLobbyClient({ userId, displayName, avatarSeed, hasSee
   }
 
   async function handleCreate() {
+    sounds.click();
     setLoading(true);
     try {
       const res = await fetch("/api/multiplayer/create", {
@@ -185,6 +163,7 @@ export function MultiplayerLobbyClient({ userId, displayName, avatarSeed, hasSee
   }
 
   async function handleJoin() {
+    sounds.click();
     if (joinCode.trim().length < 6) { toast.error("Masukkan kode 6 karakter"); return; }
     setLoading(true);
     try {
@@ -205,7 +184,6 @@ export function MultiplayerLobbyClient({ userId, displayName, avatarSeed, hasSee
 
   return (
     <main className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-      <DialogBoxLayer scene={activeScene} onComplete={handleSceneComplete} />
       <AnimatePresence>
         {showInstructions && <InstructionsModal onClose={closeInstructions} />}
       </AnimatePresence>
@@ -254,7 +232,10 @@ export function MultiplayerLobbyClient({ userId, displayName, avatarSeed, hasSee
             className="flex w-full max-w-sm flex-col gap-4"
           >
             <button
-              onClick={() => setView("create")}
+              onClick={() => {
+                sounds.click();
+                setView("create");
+              }}
               className="group relative overflow-hidden rounded-2xl border border-rose-500/40 bg-rose-500/10 p-6 text-left transition-all hover:border-rose-400/70 hover:bg-rose-500/20"
             >
               <div className="flex items-center gap-4">
@@ -270,7 +251,10 @@ export function MultiplayerLobbyClient({ userId, displayName, avatarSeed, hasSee
             </button>
 
             <button
-              onClick={() => setView("join")}
+              onClick={() => {
+                sounds.click();
+                setView("join");
+              }}
               className="group relative overflow-hidden rounded-2xl border border-indigo-500/40 bg-indigo-500/10 p-6 text-left transition-all hover:border-indigo-400/70 hover:bg-indigo-500/20"
             >
               <div className="flex items-center gap-4">

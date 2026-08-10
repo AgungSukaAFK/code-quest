@@ -2,8 +2,9 @@ import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/layout/Header";
 import { PlayClient } from "@/components/game/PlayClient";
-import { LevelBackground } from "@/components/game/LevelBackground";
-import { BG } from "@/lib/assets";
+
+// Satu-satunya modul yang aktif di aplikasi ini.
+const ACTIVE_MODULE_IDS = ["L1"];
 
 interface PlayPageProps {
   params: Promise<{ moduleId: string }>;
@@ -11,6 +12,8 @@ interface PlayPageProps {
 
 export default async function PlayPage({ params }: PlayPageProps) {
   const { moduleId } = await params;
+  if (!ACTIVE_MODULE_IDS.includes(moduleId)) notFound();
+
   const supabase = await createClient();
 
   const {
@@ -39,9 +42,6 @@ export default async function PlayPage({ params }: PlayPageProps) {
 
   if (!sessionResult.data) redirect("/world-map");
 
-  const prefix = moduleId.toLowerCase();
-  const hasSeenModuleOpen = Boolean(profile?.[`has_seen_${prefix}_open`]);
-
   const puzzleIds = (puzzlesResult.data ?? []).map((p) => p.id);
   let initialUniqueCount = 0;
   if (puzzleIds.length > 0) {
@@ -57,9 +57,7 @@ export default async function PlayPage({ params }: PlayPageProps) {
   const alreadyCompleted = initialUniqueCount >= 3;
 
   return (
-    <div className="relative min-h-screen">
-      <LevelBackground src={moduleId === "L1" ? BG.menara : BG.lembah} />
-      <div className="relative z-10">
+    <div className="relative min-h-screen bg-background">
       <Header
         user={{
           id: user.id,
@@ -78,15 +76,12 @@ export default async function PlayPage({ params }: PlayPageProps) {
           description: module.description,
         }}
         sessionId={sessionResult.data.id}
-        userId={user.id}
         avatarSeed={profile?.avatar_seed ?? null}
         username={profile?.username ?? null}
         role={profile?.role ?? null}
         initialUniqueCount={initialUniqueCount}
-        hasSeenModuleOpen={hasSeenModuleOpen}
         alreadyCompleted={alreadyCompleted}
       />
-      </div>
     </div>
   );
 }

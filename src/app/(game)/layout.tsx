@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
-import { AudioManager } from "@/components/audio/AudioManager";
 
 export default function GameLayout({
   children,
@@ -13,7 +12,6 @@ export default function GameLayout({
 
   return (
     <div className="min-h-screen flex flex-col">
-      <AudioManager />
       <motion.div
         key={pathname}
         initial={{ opacity: 0, y: 5 }}

@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/layout/Header";
 import { MultiplayerLobbyClient } from "@/components/multiplayer/MultiplayerLobbyClient";
-import { BG } from "@/lib/assets";
 
 export default async function MultiplayerLobbyPage() {
   const supabase = await createClient();
@@ -11,17 +10,12 @@ export default async function MultiplayerLobbyPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name,username,avatar_seed,role,has_seen_arena_intro")
+    .select("display_name,username,avatar_seed,role")
     .eq("id", user.id)
     .single();
 
   return (
-    <div
-      className="min-h-screen flex flex-col bg-cover bg-center"
-      style={{
-        backgroundImage: `linear-gradient(rgba(2,6,23,0.62), rgba(2,6,23,0.74)), url('${BG.arena}')`,
-      }}
-    >
+    <div className="min-h-screen flex flex-col bg-linear-to-b from-slate-950 via-indigo-950 to-slate-950">
       <Header
         user={{
           id: user.id,
@@ -33,10 +27,8 @@ export default async function MultiplayerLobbyPage() {
         }}
       />
       <MultiplayerLobbyClient
-        userId={user.id}
         displayName={profile?.display_name ?? profile?.username ?? "Siswa"}
         avatarSeed={profile?.avatar_seed ?? null}
-        hasSeenArenaIntro={Boolean(profile?.has_seen_arena_intro)}
       />
     </div>
   );

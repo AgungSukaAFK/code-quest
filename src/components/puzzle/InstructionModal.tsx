@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, CheckCircle2, GripVertical, Table2 } from "lucide-react";
+import { BookOpen, CheckCircle2, Table2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,37 +13,10 @@ import {
 interface InstructionModalProps {
   open: boolean;
   onClose: () => void;
-  puzzleType: "decomposition_sort" | "truth_table";
+  puzzleType: "truth_table";
 }
 
 const INSTRUCTIONS = {
-  decomposition_sort: {
-    Icon: GripVertical,
-    title: "Cara Bermain: Dekomposisi Masalah",
-    description:
-      "Pecah sebuah masalah besar menjadi tugas-tugas kecil, lalu kelompokkan ke kategori yang paling tepat.",
-    steps: [
-      {
-        label: "Baca semua tugas",
-        detail: 'Lihat daftar tugas yang tersedia di bagian "Daftar Tugas" di atas.',
-      },
-      {
-        label: "Pilih tugas",
-        detail: "Ketuk sebuah tugas untuk memilihnya — akan muncul info tugas yang dipilih.",
-      },
-      {
-        label: "Tempatkan ke kategori",
-        detail:
-          "Ketuk salah satu kotak kategori untuk menaruh tugas di sana. Bisa juga dengan cara seret (drag) langsung.",
-      },
-      {
-        label: "Kirim jawaban",
-        detail: 'Setelah semua tugas ditempatkan, tekan tombol "Kirim Jawaban".',
-      },
-    ],
-    tip: "Gunakan tombol Petunjuk jika bingung — sistem akan memberi clue satu tugas yang salah posisi.",
-    color: "blue" as const,
-  },
   truth_table: {
     Icon: Table2,
     title: "Cara Bermain: Tabel Kebenaran",

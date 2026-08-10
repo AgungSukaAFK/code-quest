@@ -36,39 +36,23 @@ export async function POST(request: NextRequest) {
     const safeTimer = Math.min(60, Math.max(15, timer_seconds));
     const difficultyLevels = DIFFICULTY_MAP[difficulty] ?? DIFFICULTY_MAP.random;
 
-    // Fetch puzzles for both modules
-    const [{ data: decompPuzzles }, { data: boolPuzzles }] = await Promise.all([
-      supabase
-        .from("puzzles")
-        .select("id,type,module_id,content")
-        .eq("module_id", "M2")
-        .in("difficulty", difficultyLevels),
-      supabase
-        .from("puzzles")
-        .select("id,type,module_id,content")
-        .eq("module_id", "L1")
-        .in("difficulty", difficultyLevels),
-    ]);
+    const { data: boolPuzzles } = await supabase
+      .from("puzzles")
+      .select("id,type,module_id,content")
+      .eq("module_id", "L1")
+      .in("difficulty", difficultyLevels);
 
     // Fallback to random if not enough puzzles at selected difficulty
-    const [decomp, bool_] = await Promise.all([
-      (decompPuzzles?.length ?? 0) >= 5
-        ? Promise.resolve(decompPuzzles as PuzzleRow[])
-        : supabase
-            .from("puzzles")
-            .select("id,type,module_id,content")
-            .eq("module_id", "M2")
-            .then(({ data }) => data as PuzzleRow[]),
+    const bool_ =
       (boolPuzzles?.length ?? 0) >= 5
-        ? Promise.resolve(boolPuzzles as PuzzleRow[])
-        : supabase
+        ? (boolPuzzles as PuzzleRow[])
+        : await supabase
             .from("puzzles")
             .select("id,type,module_id,content")
             .eq("module_id", "L1")
-            .then(({ data }) => data as PuzzleRow[]),
-    ]);
+            .then(({ data }) => data as PuzzleRow[]);
 
-    const generatedQuestions = generateQuestionsFromPuzzles(decomp ?? [], bool_ ?? []);
+    const generatedQuestions = generateQuestionsFromPuzzles(bool_ ?? []);
     if (generatedQuestions.length < 6) {
       return NextResponse.json({ error: "Tidak cukup soal tersedia" }, { status: 500 });
     }

@@ -10,84 +10,51 @@ import { MapNode } from "@/components/game/MapNode";
 import { MapPaths } from "@/components/game/MapPaths";
 import { ModuleDetailPanel } from "@/components/game/ModuleDetailPanel";
 import { PlayerAvatar } from "@/components/game/PlayerAvatar";
-import { DialogBoxLayer } from "@/components/narrative/DialogBox";
-import { NARRATIVE_SCRIPT, type DialogScene } from "@/lib/narrative/script";
-import { markSceneSeen } from "@/lib/narrative/seen";
-import { BG } from "@/lib/assets";
+import { sounds } from "@/lib/sounds";
 
 interface WorldMapClientProps {
-  userId: string;
   username?: string | null;
   avatarSeed?: string | null;
-  m2Done?: boolean;
   l1Done?: boolean;
-  hasSeenIntroWorld?: boolean;
 }
 
 export function WorldMapClient({
-  userId,
   username,
   avatarSeed,
-  m2Done = false,
   l1Done = false,
-  hasSeenIntroWorld = false,
 }: WorldMapClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedNode, setSelectedNode] = useState<MapNodeType | null>(null);
 
-  // L1 kebuka setelah M2 selesai; Arena setelah keduanya selesai.
-  const l1Locked = !m2Done;
-  const arenaLocked = !(m2Done && l1Done);
+  // L1 selalu terbuka; Arena terbuka setelah L1 selesai.
+  const arenaLocked = !l1Done;
 
   function isNodeLocked(id: string) {
     if (id === "ARENA") return arenaLocked;
-    if (id === "L1") return l1Locked;
     return false;
   }
   function isNodeDone(id: string) {
-    if (id === "M2") return m2Done;
     if (id === "L1") return l1Done;
     return false;
   }
 
   // Objektif terkini = node pertama yang belum selesai (buat "you are here").
-  const currentNodeId = !m2Done ? "M2" : !l1Done ? "L1" : "ARENA";
+  const currentNodeId = !l1Done ? "L1" : "ARENA";
   const playerPosition =
     MAP_NODES.find((node) => node.id === currentNodeId)?.position ?? {
-      x: 36,
-      y: 78,
+      x: 58,
+      y: 50,
     };
 
-  // Intro dunia (sekali tampil saat pertama mendarat di peta).
-  const [activeScene, setActiveScene] = useState<DialogScene | null>(null);
-
-  useEffect(() => {
-    if (!hasSeenIntroWorld) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setActiveScene(NARRATIVE_SCRIPT.intro_world);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function handleSceneComplete() {
-    const scene = activeScene;
-    setActiveScene(null);
-    if (scene?.persistColumn) {
-      void markSceneSeen(userId, scene.persistColumn);
-    }
-  }
-
-  // Baru kembali dari modul yang baru saja dituntaskan (?completed=M2/L1) →
-  // kasih tahu apa yang sudah bisa dilanjutkan, tapi modul yang baru selesai
-  // tetap bisa diulang kapan saja (mode latihan bebas di PlayClient).
+  // Baru kembali dari modul yang baru saja dituntaskan (?completed=L1) →
+  // kasih tahu apa yang sudah bisa dilanjutkan.
   useEffect(() => {
     const completed = searchParams.get("completed");
     if (!completed) return;
 
     const doneNode = MAP_NODES.find((node) => node.id === completed);
-    const nextId =
-      completed === "M2" ? "L1" : completed === "L1" ? "ARENA" : null;
+    const nextId = completed === "L1" ? "ARENA" : null;
     const nextNode = nextId
       ? MAP_NODES.find((node) => node.id === nextId)
       : null;
@@ -131,10 +98,7 @@ export function WorldMapClient({
         </p>
       </motion.div>
 
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url('${BG.worldmap}')` }}
-      >
+      <div className="absolute inset-0 bg-linear-to-b from-slate-950 via-indigo-950 to-slate-950">
         <div className="absolute inset-0 bg-slate-950/45" />
         <div className="absolute inset-0 opacity-30">
           {stars.map((star) => (
@@ -167,7 +131,10 @@ export function WorldMapClient({
             isCurrent={node.id === currentNodeId}
             isLocked={isNodeLocked(node.id)}
             isCompleted={isNodeDone(node.id)}
-            onClick={() => setSelectedNode(node)}
+            onClick={() => {
+              sounds.click();
+              setSelectedNode(node);
+            }}
           />
         ))}
 
@@ -182,11 +149,8 @@ export function WorldMapClient({
         node={selectedNode}
         onClose={() => setSelectedNode(null)}
         isLocked={selectedNode ? isNodeLocked(selectedNode.id) : false}
-        m2Done={m2Done}
         l1Done={l1Done}
       />
-
-      <DialogBoxLayer scene={activeScene} onComplete={handleSceneComplete} />
     </main>
   );
 }

@@ -23,6 +23,7 @@ export default async function RLSimulationPage() {
   const { data: modules } = await supabase
     .from("modules")
     .select("id,name,description")
+    .neq("id", "M2")
     .order("id", { ascending: true });
 
   const moduleList = (modules ?? []) as Array<{
@@ -47,7 +48,7 @@ export default async function RLSimulationPage() {
       <main className="container mx-auto max-w-6xl px-4 py-6">
         <RLSimulationClient
           modules={moduleList}
-          defaultModuleId={moduleList[0]?.id ?? "M2"}
+          defaultModuleId={moduleList[0]?.id ?? "L1"}
         />
       </main>
     </div>

@@ -229,7 +229,7 @@ export function MultiplayerGame({
 
   const timerPct = (timeLeft / room.timer_seconds) * 100;
   const timerColor = timerPct > 50 ? "bg-emerald-500" : timerPct > 25 ? "bg-amber-500" : "bg-rose-500";
-  const typeLabel = question.puzzle_type === "decomposition" ? "🧩 Dekomposisi" : "⚡ Boolean";
+  const typeLabel = "⚡ Boolean";
 
   // Use local selection for immediate feedback; fall back to server answer
   const displaySelected = myAnswer?.selected_option_id ?? localSelectedId;

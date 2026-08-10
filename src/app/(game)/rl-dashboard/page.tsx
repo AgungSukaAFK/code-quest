@@ -23,11 +23,13 @@ export default async function RLDashboardPage() {
   const { data: modules } = await supabase
     .from("modules")
     .select("id,name,description")
+    .neq("id", "M2")
     .order("id", { ascending: true });
 
   const { data: qTables } = await supabase
     .from("q_tables")
     .select("*")
+    .neq("module_id", "M2")
     .order("module_id", { ascending: true });
 
   const { data: recentEvents } = await supabase

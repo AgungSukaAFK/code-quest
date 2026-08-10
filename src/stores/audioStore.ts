@@ -7,18 +7,10 @@ function initialMuted(): boolean {
 }
 
 interface AudioState {
-  /** Mute global (musik + SFX). Tersimpan di localStorage `cq_sound_muted`. */
+  /** Mute global untuk suara efek (SFX). Tersimpan di localStorage `cq_sound_muted`. */
   muted: boolean;
-  /** Jumlah cutscene aktif; >0 berarti musik di-duck (dipelankan). */
-  duckCount: number;
-  /** URL stinger one-shot yang minta diputar (mis. kemenangan). */
-  stinger: string | null;
   setMuted: (m: boolean) => void;
   toggleMuted: () => void;
-  pushDuck: () => void;
-  popDuck: () => void;
-  playStinger: (src: string) => void;
-  clearStinger: () => void;
 }
 
 function persistMuted(m: boolean) {
@@ -30,8 +22,6 @@ function persistMuted(m: boolean) {
 
 export const useAudioStore = create<AudioState>((set) => ({
   muted: initialMuted(),
-  duckCount: 0,
-  stinger: null,
   setMuted: (m) => {
     persistMuted(m);
     set({ muted: m });
@@ -42,8 +32,4 @@ export const useAudioStore = create<AudioState>((set) => ({
       persistMuted(m);
       return { muted: m };
     }),
-  pushDuck: () => set((s) => ({ duckCount: s.duckCount + 1 })),
-  popDuck: () => set((s) => ({ duckCount: Math.max(0, s.duckCount - 1) })),
-  playStinger: (src) => set({ stinger: src }),
-  clearStinger: () => set({ stinger: null }),
 }));

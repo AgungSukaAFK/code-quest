@@ -37,7 +37,7 @@ export default async function ProfilePage() {
       .select("module_id, total_attempts, total_correct, started_at")
       .eq("user_id", user.id)
       .order("started_at", { ascending: false }),
-    supabase.from("modules").select("id, name").order("display_order"),
+    supabase.from("modules").select("id, name").neq("id", "M2").order("display_order"),
   ]);
 
   if (!profile) redirect("/login");

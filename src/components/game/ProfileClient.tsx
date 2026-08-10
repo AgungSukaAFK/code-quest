@@ -13,7 +13,6 @@ import {
   Shield,
   User,
   Palette,
-  Network,
   Binary,
   Trophy,
   Target,
@@ -47,7 +46,6 @@ const AVATAR_SEEDS = [
 ];
 
 const MODULE_ICONS: Record<string, React.ElementType> = {
-  M2: Network,
   L1: Binary,
 };
 

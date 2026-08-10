@@ -14,14 +14,6 @@ export interface MapPath {
 
 export const MAP_NODES: MapNode[] = [
   {
-    id: "M2",
-    name: "Lembah Dekomposisi",
-    type: "computational_thinking",
-    position: { x: 36, y: 78 },
-    iconName: "Network",
-    description: "Belajar memecah masalah kompleks menjadi sub-masalah",
-  },
-  {
     id: "L1",
     name: "Menara Logika Boolean",
     type: "logic_math",
@@ -35,11 +27,8 @@ export const MAP_NODES: MapNode[] = [
     type: "multiplayer",
     position: { x: 48, y: 22 },
     iconName: "Swords",
-    description: "Tantang temanmu dalam kuis 10 soal! Dekomposisi + Boolean. Siapa tercepat menang?",
+    description: "Tantang temanmu dalam kuis 10 soal Boolean! Siapa tercepat menang?",
   },
 ];
 
-export const MAP_PATHS: MapPath[] = [
-  { from: "M2", to: "L1" },
-  { from: "L1", to: "ARENA" },
-];
+export const MAP_PATHS: MapPath[] = [{ from: "L1", to: "ARENA" }];

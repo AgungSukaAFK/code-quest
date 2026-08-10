@@ -4,6 +4,8 @@ import { loadAgent } from "@/lib/rl/q-table-store";
 import { buildStudentState } from "@/lib/rl/state-builder";
 import { stateToKey } from "@/lib/rl/state";
 
+const ACTIVE_MODULE_IDS = ["L1"];
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -23,7 +25,7 @@ export async function POST(request: NextRequest) {
       exclude_ids?: string[];
     };
 
-    if (!module_id) {
+    if (!module_id || !ACTIVE_MODULE_IDS.includes(module_id)) {
       return NextResponse.json(
         { error: "module_id required" },
         { status: 400 },

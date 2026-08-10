@@ -291,8 +291,6 @@ export function PuzzlesClient({ puzzles, modules }: PuzzlesClientProps) {
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   <option value="truth_table">truth_table</option>
-                  <option value="decomposition_sort">decomposition_sort</option>
-                  <option value="decomposition_order">decomposition_order</option>
                   <option value="circuit_eval">circuit_eval</option>
                 </select>
               </div>

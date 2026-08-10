@@ -8,10 +8,6 @@ import type { MultiplayerRoom, RoomPlayer, RoomQuestion, RoomAnswer } from "@/ty
 import { WaitingRoom } from "@/components/multiplayer/WaitingRoom";
 import { MultiplayerGame } from "@/components/multiplayer/MultiplayerGame";
 import { FinalPodium } from "@/components/multiplayer/FinalPodium";
-import { DialogBoxLayer } from "@/components/narrative/DialogBox";
-import { NARRATIVE_SCRIPT, type DialogScene } from "@/lib/narrative/script";
-import { useAudioStore } from "@/stores/audioStore";
-import { BGM } from "@/lib/assets";
 
 interface Props {
   initialRoom: MultiplayerRoom;
@@ -93,21 +89,6 @@ export function MultiplayerRoomClient({ initialRoom, initialPlayers, questions, 
     setAnswers([]);
   }, [room.current_question_index]);
 
-  // Cutscene kemenangan: tampil sekali saat pertandingan selesai (per sesi).
-  const [activeScene, setActiveScene] = useState<DialogScene | null>(null);
-  const [victoryShown, setVictoryShown] = useState(false);
-  const playStinger = useAudioStore((s) => s.playStinger);
-
-  useEffect(() => {
-    if (room.status === "finished" && !victoryShown) {
-      /* eslint-disable react-hooks/set-state-in-effect */
-      setVictoryShown(true);
-      setActiveScene(NARRATIVE_SCRIPT.arena_victory);
-      /* eslint-enable react-hooks/set-state-in-effect */
-      playStinger(BGM.victory);
-    }
-  }, [room.status, victoryShown, playStinger]);
-
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
   const isHost = currentPlayer.is_host;
   const currentQuestion = questions[room.current_question_index] ?? null;
@@ -151,13 +132,5 @@ export function MultiplayerRoomClient({ initialRoom, initialPlayers, questions, 
     );
   }
 
-  return (
-    <>
-      {content}
-      <DialogBoxLayer
-        scene={activeScene}
-        onComplete={() => setActiveScene(null)}
-      />
-    </>
-  );
+  return content;
 }

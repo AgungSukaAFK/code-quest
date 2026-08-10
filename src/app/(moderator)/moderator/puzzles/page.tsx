@@ -43,9 +43,10 @@ export default async function ModeratorPuzzlesPage() {
       .select(
         "id, module_id, type, difficulty, title, goal, content, expected_time_sec, concepts_tested",
       )
+      .neq("module_id", "M2")
       .order("module_id")
       .order("difficulty"),
-    admin.from("modules").select("id, name").order("display_order"),
+    admin.from("modules").select("id, name").neq("id", "M2").order("display_order"),
   ]);
 
   return (

@@ -13,17 +13,15 @@ interface ModuleDetailPanelProps {
   node: MapNode | null;
   onClose: () => void;
   isLocked?: boolean;
-  m2Done?: boolean;
   l1Done?: boolean;
 }
 
 const BADGE_LABEL: Record<string, string> = {
-  computational_thinking: "Berpikir Komputasional",
   logic_math: "Logika Matematika",
   multiplayer: "Mode Multiplayer",
 };
 
-export function ModuleDetailPanel({ node, onClose, isLocked = false, m2Done = false, l1Done = false }: ModuleDetailPanelProps) {
+export function ModuleDetailPanel({ node, onClose, isLocked = false, l1Done = false }: ModuleDetailPanelProps) {
   return (
     <AnimatePresence>
       {node && node.type !== "locked" && (
@@ -59,35 +57,30 @@ export function ModuleDetailPanel({ node, onClose, isLocked = false, m2Done = fa
               <div className="space-y-3">
                 <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
                   <Lock className="h-4 w-4 shrink-0" />
-                  <span>Tuntaskan kedua babak untuk membuka Arena</span>
+                  <span>Tuntaskan Menara Logika Boolean untuk membuka Arena</span>
                 </div>
-                {[
-                  { label: "Lembah Dekomposisi", done: m2Done, href: "/play/M2" },
-                  { label: "Menara Logika Boolean", done: l1Done, href: "/play/L1" },
-                ].map(({ label, done, href }) => (
-                  <div key={label} className="rounded-xl border px-3 py-2">
-                    <div className="flex items-center justify-between gap-2 text-sm">
-                      <span className="font-medium">{label}</span>
-                      {done ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                          <CheckCircle2 className="h-4 w-4" />
-                          Selesai
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Belum selesai</span>
-                      )}
-                    </div>
-                    {!done && (
-                      <Link
-                        href={href}
-                        className={cn(buttonVariants({ variant: "outline", size: "sm" }), "mt-2 w-full justify-center")}
-                      >
-                        <Play className="mr-1.5 h-3 w-3" />
-                        Mainkan sekarang
-                      </Link>
+                <div className="rounded-xl border px-3 py-2">
+                  <div className="flex items-center justify-between gap-2 text-sm">
+                    <span className="font-medium">Menara Logika Boolean</span>
+                    {l1Done ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Selesai
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Belum selesai</span>
                     )}
                   </div>
-                ))}
+                  {!l1Done && (
+                    <Link
+                      href="/play/L1"
+                      className={cn(buttonVariants({ variant: "outline", size: "sm" }), "mt-2 w-full justify-center")}
+                    >
+                      <Play className="mr-1.5 h-3 w-3" />
+                      Mainkan sekarang
+                    </Link>
+                  )}
+                </div>
               </div>
             ) : node.type === "multiplayer" ? (
               <Link
@@ -100,20 +93,6 @@ export function ModuleDetailPanel({ node, onClose, isLocked = false, m2Done = fa
                 <Swords className="mr-2 h-4 w-4" />
                 Masuk Arena
               </Link>
-            ) : isLocked ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
-                  <Lock className="h-4 w-4 shrink-0" />
-                  <span>Selesaikan Lembah Dekomposisi (3 soal) dulu untuk membuka babak ini.</span>
-                </div>
-                <Link
-                  href="/play/M2"
-                  className={cn(buttonVariants({ size: "lg" }), "w-full justify-center")}
-                >
-                  <Play className="mr-2 h-4 w-4" />
-                  Ke Lembah Dekomposisi
-                </Link>
-              </div>
             ) : (
               <Link
                 href={`/play/${node.id}`}

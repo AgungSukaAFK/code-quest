@@ -38,7 +38,7 @@ export interface RoomQuestion {
   room_id: string;
   question_order: number;
   puzzle_id: string | null;
-  puzzle_type: "decomposition" | "boolean";
+  puzzle_type: "boolean";
   question_text: string;
   options: MCOption[];
   correct_option_id: string;

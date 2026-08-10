@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, BookOpen, BrainCircuit, Loader2, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
-import { DecompositionSortPuzzle } from "@/components/puzzle/decomposition/DecompositionSortPuzzle";
 import { BooleanPuzzle } from "@/components/puzzle/boolean/BooleanPuzzle";
 import { PuzzleResultModal } from "@/components/puzzle/PuzzleResultModal";
 import { InstructionModal } from "@/components/puzzle/InstructionModal";
@@ -20,13 +19,6 @@ import type {
   TruthTablePuzzle,
 } from "@/types/puzzle";
 import type { RLState } from "@/lib/rl/types";
-import { DialogBoxLayer } from "@/components/narrative/DialogBox";
-import {
-  NARRATIVE_SCRIPT,
-  modulePrefix,
-  type DialogScene,
-} from "@/lib/narrative/script";
-import { markSceneSeen } from "@/lib/narrative/seen";
 import { useAudioStore } from "@/stores/audioStore";
 
 interface RLUpdateInfo {
@@ -47,16 +39,14 @@ interface PlayClientProps {
     description: string | null;
   };
   sessionId: string;
-  userId: string;
   avatarSeed: string | null;
   username: string | null;
   role: string | null;
   initialUniqueCount?: number;
-  hasSeenModuleOpen?: boolean;
   alreadyCompleted?: boolean;
 }
 
-export function PlayClient({ module, sessionId, userId, avatarSeed, username, role, hasSeenModuleOpen = false, alreadyCompleted = false }: PlayClientProps) {
+export function PlayClient({ module, sessionId, avatarSeed, username, role, alreadyCompleted = false }: PlayClientProps) {
   const isModerator = role === "moderator";
   const router = useRouter();
 
@@ -96,55 +86,19 @@ export function PlayClient({ module, sessionId, userId, avatarSeed, username, ro
     ? "Latihan bebas ∞"
     : `Soal ${currentSoalNumber}/${SOAL_PER_MODULE}`;
 
-  // ── Cutscene / narasi ──────────────────────────────────────
-  const prefix = modulePrefix(module.id);
-  const [activeScene, setActiveScene] = useState<DialogScene | null>(null);
-  const afterSceneRef = useRef<(() => void) | null>(null);
-
-  function playScene(sceneId: string, after?: () => void) {
-    const scene = NARRATIVE_SCRIPT[sceneId];
-    if (!scene) {
-      after?.();
-      return;
-    }
-    afterSceneRef.current = after ?? null;
-    setActiveScene(scene);
-  }
-
-  function handleSceneComplete() {
-    const scene = activeScene;
-    setActiveScene(null);
-    if (scene?.persistColumn) {
-      void markSceneSeen(userId, scene.persistColumn);
-    }
-    const after = afterSceneRef.current;
-    afterSceneRef.current = null;
-    after?.();
-  }
-
   useEffect(() => {
     loadNextPuzzle();
-    if (prefix) {
-      if (alreadyCompleted) {
-        // Modul sudah tuntas → sambutan "latihan bebas".
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        playScene(`${prefix}_replay`);
-      } else if (!hasSeenModuleOpen) {
-        playScene(`${prefix}_module_open`);
-      }
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    // Jangan munculkan petunjuk saat cutscene sedang tampil — biar tidak menumpuk.
-    if (!currentPuzzle || activeScene) return;
+    if (!currentPuzzle) return;
     const key = `cq_instructions_seen_${currentPuzzle.type}`;
     if (!localStorage.getItem(key)) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowInstructions(true);
     }
-  }, [currentPuzzle?.type, activeScene]);
+  }, [currentPuzzle?.type]);
 
   useEffect(() => {
     if (!isModerator) return;
@@ -288,23 +242,12 @@ export function PlayClient({ module, sessionId, userId, avatarSeed, username, ro
     setShowResult(false);
     setResult(null);
 
-    // Sudah 3 soal berbeda → tutup modul (cutscene), lalu kembali ke peta.
+    // Sudah 3 soal berbeda → tutup modul, lalu kembali ke peta.
     if (newCompleted.length >= SOAL_PER_MODULE) {
-      const goToMap = () =>
-        router.push(`/world-map?completed=${module.id}`);
-      if (prefix) {
-        playScene(`${prefix}_module_close`, goToMap);
-      } else {
-        goToMap();
-      }
+      router.push(`/world-map?completed=${module.id}`);
       return;
     }
 
-    // Transisi singkat sebelum soal ke-2 / ke-3.
-    const upcomingSoal = newCompleted.length + 1;
-    if (prefix) {
-      playScene(`${prefix}_soal${upcomingSoal}`);
-    }
     // Kirim daftar exclude terbaru langsung — state `completedPuzzleIds` belum
     // ke-flush di render ini, jadi kalau dibaca dari closure/state akan basi
     // dan bisa membuat soal berikutnya mengulang soal yang barusan dikerjakan.
@@ -417,21 +360,6 @@ export function PlayClient({ module, sessionId, userId, avatarSeed, username, ro
         )}
       >
         <div className="space-y-4">
-          {currentPuzzle.type === "decomposition_sort" && (
-            <DecompositionSortPuzzle
-              key={puzzleRenderKey}
-              puzzle={currentPuzzle}
-              onSubmit={(answer) =>
-                handleSubmit(
-                  { mapping: answer.mapping },
-                  undefined,
-                  answer.hints_used,
-                )
-              }
-              isSubmitting={submitting}
-            />
-          )}
-
           {currentPuzzle.type === "truth_table" && (
             <BooleanPuzzle
               key={puzzleRenderKey}
@@ -480,13 +408,9 @@ export function PlayClient({ module, sessionId, userId, avatarSeed, username, ro
         <InstructionModal
           open={showInstructions}
           onClose={handleCloseInstructions}
-          puzzleType={
-            currentPuzzle.type as "decomposition_sort" | "truth_table"
-          }
+          puzzleType={currentPuzzle.type as "truth_table"}
         />
       )}
-
-      <DialogBoxLayer scene={activeScene} onComplete={handleSceneComplete} />
     </main>
   );
 }

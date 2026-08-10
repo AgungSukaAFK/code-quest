@@ -2,7 +2,6 @@ import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/layout/Header";
 import { MultiplayerRoomClient } from "@/components/multiplayer/MultiplayerRoomClient";
-import { BG } from "@/lib/assets";
 
 interface Props {
   params: Promise<{ code: string }>;
@@ -55,12 +54,7 @@ export default async function MultiplayerRoomPage({ params }: Props) {
   if (!currentPlayer) notFound();
 
   return (
-    <div
-      className="min-h-screen flex flex-col bg-cover bg-center"
-      style={{
-        backgroundImage: `linear-gradient(rgba(2,6,23,0.62), rgba(2,6,23,0.74)), url('${BG.arena}')`,
-      }}
-    >
+    <div className="min-h-screen flex flex-col bg-linear-to-b from-slate-950 via-indigo-950 to-slate-950">
       <Header
         user={{
           id: user.id,
