@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+
+# pnpm
+pnpm-lock.yaml
+pnpm-workspace.yaml
+
+# panduan pemain
+PANDUAN-PEMAIN.md
+
+# npmrc
+.npmrc

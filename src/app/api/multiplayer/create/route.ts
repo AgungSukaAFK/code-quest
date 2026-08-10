@@ -75,7 +75,15 @@ export async function POST(request: NextRequest) {
 
     // Generate unique room code (retry on conflict)
     let code = "";
-    let room = null;
+        let room: {
+      id: string;
+      code: string;
+      host_id: string;
+      host_name: string;
+      difficulty: string;
+      timer_seconds: number;
+      created_at: string;
+    } | null = null;
     let lastInsertError: unknown = null;
     for (let attempt = 0; attempt < 5; attempt++) {
       code = generateCode();
@@ -101,10 +109,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Gagal membuat room" }, { status: 500 });
     }
 
+    const roomId = room.id;
     // Insert questions
     const questionsToInsert = generatedQuestions.map((q) => ({
       ...q,
-      room_id: room.id,
+      room_id: roomId,
     }));
 
     const { error: qErr } = await supabase.from("room_questions").insert(questionsToInsert);

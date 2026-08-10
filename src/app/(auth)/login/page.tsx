@@ -126,8 +126,8 @@ export default function LoginPage() {
         <div className="text-center">
           <div className="flex justify-center mb-3">
             <Image
-              src="/images/codequest.webp"
-              alt="CodeQuest"
+              src="/images/logikalia.svg"
+              alt="Logikalia"
               width={280}
               height={80}
               style={{ height: "80px", width: "auto" }}

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CodeQuest",
+  title: "Logikalia",
   description: "Game edukasi adaptif berbasis reinforcement learning.",
   icons: [
     { rel: "icon", url: "/favicon.ico" },
