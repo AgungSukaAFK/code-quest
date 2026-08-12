@@ -19,7 +19,8 @@ import {
   Sparkles,
   LogIn,
 } from "lucide-react";
-import { BG, CHAR } from "@/lib/assets";
+import { BG, CHAR, SPONSORS } from "@/lib/assets";
+import { LinkImage } from "@/components/ui/link-image";
 
 const MODULES = [
   {
@@ -95,18 +96,6 @@ const STEPS = [
     title: "Tantang Sesama",
     desc: "Tuntaskan latihan untuk membuka Arena Multiplayer dan adu kemampuan langsung.",
   },
-];
-
-const SPONSORS = [
-  {
-    src: "/images/kemdikbud.webp",
-    alt: "Kementerian Pendidikan, Kebudayaan, Riset, dan Teknologi",
-  },
-  { src: "/images/diktisaintek.webp", alt: "DIKTISAINTEK" },
-  { src: "/images/bima.webp", alt: "BIMA" },
-  { src: "/images/uniba.webp", alt: "Universitas Bina Bangsa" },
-  { src: "/images/unbaja.webp", alt: "Universitas Banten Jaya" },
-  { src: "/images/smk.webp", alt: "SMK PGRI 3" },
 ];
 
 const NAV_ITEMS = [
@@ -681,11 +670,12 @@ export default function LandingPage() {
             Didukung oleh
           </p>
           <div className="flex items-center justify-center gap-8 sm:gap-14 flex-wrap">
-            {SPONSORS.map((s) => (
-              <Image
-                key={s.src}
-                src={s.src}
-                alt={s.alt}
+            {SPONSORS.map((S) => (
+              <LinkImage
+                key={S.id}
+                src={S.src}
+                alt={S.alt}
+                link={S.link}
                 width={160}
                 height={52}
                 style={{ height: "52px", width: "auto" }}

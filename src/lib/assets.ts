@@ -27,3 +27,42 @@ export const BGM = {
   dialog: "/audio/bgm-dialog.mp3",
   victory: "/audio/stinger-victory.mp3",
 } as const;
+
+  export const SPONSORS = [
+    {
+      id: 1,
+      src: "/images/kemdikbud.webp",
+      alt: "Kementerian Pendidikan, Kebudayaan, Riset, dan Teknologi",
+      link: "https://kemdiktisaintek.go.id",
+    },
+    {
+      id: 2,
+      src: "/images/diktisaintek.webp",
+      alt: "DIKTISAINTEK",
+      link: "https://dikti.kemdiktisaintek.go.id/",
+    },
+    {
+      id: 3,
+      src: "/images/bima.webp",
+      alt: "BIMA",
+      link: "https://bima.kemdiktisaintek.go.id/",
+    },
+    {
+      id: 4,
+      src: "/images/uniba.webp",
+      alt: "Universitas Bina Bangsa",
+      link: "https://binabangsa.ac.id"
+    },
+    {
+      id: 5,
+      src: "/images/unbaja.webp",
+      alt: "Universitas Banten Jaya",
+      link: "https://unbaja.ac.id"
+    },
+    {
+      id: 6,
+      src: "/images/smk.webp",
+      alt: "SMK PGRI 3",
+      link: "https://www.smkpgri3kotaserang.sch.id/"
+    },
+  ];

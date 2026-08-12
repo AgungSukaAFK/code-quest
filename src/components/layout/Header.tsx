@@ -24,6 +24,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SPONSORS } from "@/lib/assets";
+import { LinkImage } from "../ui/link-image";
 
 interface HeaderProps {
   user: {
@@ -227,18 +229,12 @@ export function Header({ user }: HeaderProps) {
       {/* Strip logo sponsor untuk layar mobile (di desktop tampil di dalam bar) */}
       <div className="md:hidden border-t">
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 py-1.5">
-          {[
-            { src: "/images/kemdikbud.webp", alt: "Kemdikbud" },
-            { src: "/images/diktisaintek.webp", alt: "DIKTISAINTEK" },
-            { src: "/images/bima.webp", alt: "BIMA" },
-            { src: "/images/uniba.webp", alt: "Universitas Bina Bangsa" },
-            { src: "/images/unbaja.webp", alt: "Universitas Banten Jaya" },
-            { src: "/images/smk.webp", alt: "SMK PGRI 3" },
-          ].map((logo) => (
-            <Image
-              key={logo.src}
-              src={logo.src}
-              alt={logo.alt}
+          {SPONSORS.map((S) => (
+            <LinkImage
+              key={S.id}
+              src={S.src}
+              alt={S.alt}
+              link={S.link}
               width={80}
               height={20}
               className="shrink-0 opacity-70"
