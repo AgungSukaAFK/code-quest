@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import type { MapNode as MapNodeType } from "@/lib/game/world-map-config";
 import { MAP_NODES } from "@/lib/game/world-map-config";
 import { MapNode } from "@/components/game/MapNode";
@@ -30,6 +32,8 @@ export function WorldMapClient({
   l1Done = false,
   hasSeenIntroWorld = false,
 }: WorldMapClientProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedNode, setSelectedNode] = useState<MapNodeType | null>(null);
 
   // L1 kebuka setelah M2 selesai; Arena setelah keduanya selesai.
@@ -73,6 +77,31 @@ export function WorldMapClient({
       void markSceneSeen(userId, scene.persistColumn);
     }
   }
+
+  // Baru kembali dari modul yang baru saja dituntaskan (?completed=M2/L1) →
+  // kasih tahu apa yang sudah bisa dilanjutkan, tapi modul yang baru selesai
+  // tetap bisa diulang kapan saja (mode latihan bebas di PlayClient).
+  useEffect(() => {
+    const completed = searchParams.get("completed");
+    if (!completed) return;
+
+    const doneNode = MAP_NODES.find((node) => node.id === completed);
+    const nextId =
+      completed === "M2" ? "L1" : completed === "L1" ? "ARENA" : null;
+    const nextNode = nextId
+      ? MAP_NODES.find((node) => node.id === nextId)
+      : null;
+
+    toast.success(
+      nextNode
+        ? `${doneNode?.name ?? "Modul"} selesai! Kamu sekarang bisa lanjut ke ${nextNode.name}. Mau latihan lagi di sini juga masih bisa kapan saja.`
+        : `${doneNode?.name ?? "Modul"} selesai!`,
+    );
+
+    // Bersihkan query param supaya toast tidak muncul lagi saat refresh.
+    router.replace("/world-map");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const stars = useMemo(
     () =>
